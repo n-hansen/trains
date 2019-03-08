@@ -13,27 +13,13 @@ suite =
     describe "StockMarket module"
         [ describe "Simple market example" <|
             let
-                p1 =
-                    "Alice"
-
-                p2 =
-                    "Bob"
-
-                p3 =
-                    "Candice"
-
-                p4 =
-                    "Doug"
-
-                c1 =
-                    "Grand Trunk"
-
-                c2 =
-                    "Erie"
-
-                c3 =
-                    "B&O"
-
+                p1 = "Alice"
+                p2 = "Bob"
+                p3 = "Candice"
+                p4 = "Doug"
+                c1 = "Grand Trunk"
+                c2 = "Erie"
+                c3 = "B&O"
                 market =
                     { playerOrder = [ p1, p2, p3, p4 ]
                     , companyOrder = [ c1, c2, c3 ]
@@ -163,6 +149,43 @@ suite =
                             |> buyShareFromMarket p3 c3
                             |> Result.andThen (buyShareFromMarket p3 c3)
                             |> Result.andThen (buyShareFromMarket p3 c3)
+                            |> Result.map (.presidents >> Dict.get c3)
+                            |> Expect.equal (Ok (Just p3))
+                ]
+            , describe "buyShareFromCompany"
+                [ test "transaction test" <|
+                    \_ ->
+                        market
+                            |> buyShareFromCompany p1 c2
+                            |> Expect.all
+                                [ Result.map (.playerShares >> Dict.get2 p1 c2)
+                                    >> Expect.equal (Ok (Just 2))
+                                , Result.map (\m -> companyShares m c2)
+                                    >> Expect.equal (Ok 1)
+                                , Result.map (.playerCash >> Dict.get p1)
+                                    >> Expect.equal (Ok (Just 80))
+                                , Result.map (.companyCash >> Dict.get c2)
+                                    >> Expect.equal (Ok (Just 170))
+                                ]
+                , test "certificate limit" <|
+                    \_ ->
+                        buyShareFromCompany p2 c2 market |> Expect.err
+                , test "cash available" <|
+                    \_ ->
+                        buyShareFromCompany p4 c2 market |> Expect.err
+                , test "share available" <|
+                    \_ ->
+                        market
+                            |> buyShareFromCompany p3 c2
+                            |> Result.andThen (buyShareFromCompany p3 c2)
+                            |> Result.andThen (buyShareFromCompany p3 c2)
+                            |> Expect.err
+                , test "presidency transfer" <|
+                    \_ ->
+                        market
+                            |> buyShareFromCompany p3 c3
+                            |> Result.andThen (buyShareFromCompany p3 c3)
+                            |> Result.andThen (buyShareFromCompany p3 c3)
                             |> Result.map (.presidents >> Dict.get c3)
                             |> Expect.equal (Ok (Just p3))
                 ]

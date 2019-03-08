@@ -1,4 +1,4 @@
-module StockMarket exposing (..)
+module StockMarket exposing (CompanyName, Market, PlayerName, playerCertificateCount, playerStockValue, playerNetWorth, companyShares, buyShareFromMarket, buyShareFromCompany)
 
 import Dict exposing (Dict)
 import List
@@ -109,7 +109,23 @@ buyShareFromMarket player company ({ shareValues } as market) =
             market
                 |> removeMarketShare company
                 |> Result.andThen (addPlayerShare player company)
-                |> Result.andThen (payBankFromPlayer player shareValue)
+                |> Result.andThen (debitPlayer player shareValue)
+                |> Result.andThen (creditBank shareValue)
+
+
+buyShareFromCompany : PlayerName -> CompanyName -> Market -> Result String Market
+buyShareFromCompany player company ({ shareValues } as market) =
+    case Dict.get company shareValues of
+        Nothing ->
+            Err <| "No share value for company " ++ company ++ "."
+
+        Just shareValue ->
+            market
+                |> addPlayerShare player company
+                |> Result.guard (\m -> companyShares m company >= 0)
+                   ("No shares held by company " ++ company ++ ".")
+                |> Result.andThen (debitPlayer player shareValue)
+                |> Result.andThen (creditCompany company shareValue)
 
 
 removeMarketShare : CompanyName -> Market -> Result String Market
@@ -177,15 +193,85 @@ updatePresidency ({ presidents, playerShares } as market) =
     }
 
 
-payBankFromPlayer : PlayerName -> Int -> Market -> Result String Market
-payBankFromPlayer player amount ({ playerCash, bank } as market) =
-    Dict.get player playerCash
-        |> Result.fromMaybe ("No cash entry for player " ++ player ++ ".")
-        |> Result.guard (\x -> x >= amount) ("Player " ++ player ++ " doesn't have enough cash.")
-        |> Result.map
-            (\currCash ->
-                { market
-                    | bank = bank + amount
-                    , playerCash = Dict.insert player (currCash - amount) playerCash
-                }
-            )
+creditPlayer : PlayerName -> Int -> Market -> Result String Market
+creditPlayer player amount ({ playerCash } as market) =
+    if amount < 0 then
+        Err "Negative transaction amounts are forbidden"
+
+    else
+        Dict.get player playerCash
+            |> Result.fromMaybe ("No cash entry for player " ++ player ++ ".")
+            |> Result.map
+                (\currCash ->
+                    { market
+                        | playerCash = Dict.insert player (currCash + amount) playerCash
+                    }
+                )
+
+
+debitPlayer : PlayerName -> Int -> Market -> Result String Market
+debitPlayer player amount ({ playerCash } as market) =
+    if amount < 0 then
+        Err "Negative transaction amounts are forbidden."
+
+    else
+        Dict.get player playerCash
+            |> Result.fromMaybe ("No cash entry for player " ++ player ++ ".")
+            |> Result.guard (\x -> x >= amount) ("Player " ++ player ++ " doesn't have enough cash.")
+            |> Result.map
+                (\currCash ->
+                    { market
+                        | playerCash = Dict.insert player (currCash - amount) playerCash
+                    }
+                )
+
+
+creditCompany : CompanyName -> Int -> Market -> Result String Market
+creditCompany company amount ({ companyCash } as market) =
+    if amount < 0 then
+        Err "Negative transaction amounts are forbidden."
+
+    else
+        Dict.get company companyCash
+            |> Result.fromMaybe ("No cash entry for company " ++ company ++ ".")
+            |> Result.map
+                (\currCash ->
+                    { market
+                        | companyCash = Dict.insert company (currCash + amount) companyCash
+                    }
+                )
+
+
+debitCompany : CompanyName -> Int -> Market -> Result String Market
+debitCompany company amount ({ companyCash } as market) =
+    if amount < 0 then
+        Err "Negative transaction amounts are forbidden."
+
+    else
+        Dict.get company companyCash
+            |> Result.fromMaybe ("No cash entry for company " ++ company ++ ".")
+            |> Result.guard (\x -> x >= amount) ("Company " ++ company ++ " doesn't have enough cash.")
+            |> Result.map
+                (\currCash ->
+                    { market
+                        | companyCash = Dict.insert company (currCash - amount) companyCash
+                    }
+                )
+
+
+creditBank : Int -> Market -> Result String Market
+creditBank amount ({ bank } as market) =
+    if amount < 0 then
+        Err "Negative transaction amounts are forbidden."
+
+    else
+        Ok { market | bank = bank + amount }
+
+
+debitBank : Int -> Market -> Result String Market
+debitBank amount ({ bank } as market) =
+    if amount < 0 then
+        Err "Negative transaction amounts are forbidden."
+
+    else
+        Ok { market | bank = bank - amount }

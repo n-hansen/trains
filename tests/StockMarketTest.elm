@@ -65,5 +65,13 @@ suite =
                          \_ ->
                              playerNetWorth market p2 |> Expect.equal 280
                      ]
+                 , describe "companyShares"
+                     [ test "test 1" <|
+                           \_ ->
+                           companyShares market c1 |> Expect.equal 8
+                     , test "test 2" <|
+                         \_ ->
+                             companyShares market c2 |> Expect.equal 2
+                     ]
                  ]
         ]

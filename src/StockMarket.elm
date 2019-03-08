@@ -58,3 +58,13 @@ playerNetWorth ({playerCash} as market) player =
                                      |> Maybe.withDefault 0
                                      )
 
+companyShares : Market -> CompanyName -> Int
+companyShares {playerShares, marketShares, totalShares} company =
+    totalShares
+    - (Dict.get company marketShares |> Maybe.withDefault 0)
+    - ( Dict.values playerShares
+      |> List.concatMap Dict.toList
+      |> List.filter (\(c,_) -> company == c)
+      |> List.map Tuple.second
+      |> List.sum
+      )

@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import List
 import List.Extra as List
 import Maybe
+import Maybe.Extra as Maybe
 import Result
 import Result.Extra as Result
 import Tuple
@@ -186,38 +187,31 @@ addPlayerShare player company ({ playerShares, certificateLimit } as market) =
         |> Ok
         |> Result.guard (\m -> playerCertificateCount m player <= certificateLimit)
             ("Player " ++ player ++ " already at certificate limit.")
-        |> Result.map updatePresidency
+        |> Result.map (updatePresidency company)
 
 
-updatePresidency : Market -> Market
-updatePresidency ({ presidents, playerShares } as market) =
+updatePresidency : CompanyName -> Market -> Market
+updatePresidency company ({ presidents, playerShares } as market) =
     { market
         | presidents =
-            presidents
-                |> Dict.map
-                    (\company president ->
-                        let
-                            presidentShares =
-                                Dict.get2 president company playerShares
-                                    |> Maybe.withDefault 0
-
-                            ( controller, controllingShares ) =
-                                Dict.toList playerShares
-                                    |> List.map
-                                        (Tuple.mapSecond
-                                            (Dict.get company
-                                                >> Maybe.withDefault 0
-                                            )
-                                        )
-                                    |> List.maximumBy Tuple.second
-                                    |> Maybe.withDefault ( president, presidentShares )
-                        in
-                        if controllingShares > presidentShares then
-                            controller
-
-                        else
-                            president
-                    )
+            Dict.toList playerShares
+                |> List.map (\(player,shares) ->
+                                 Dict.get company shares
+                                     |> Maybe.map (Tuple.pair player)
+                            )
+                |> Maybe.values
+                |> List.maximumBy Tuple.second
+                |> Maybe.map ( \(shareLeader, shareCount) ->
+                                   case Dict.get company presidents of
+                                       Nothing -> Dict.insert company shareLeader presidents
+                                       Just currentPresident ->
+                                           if shareCount > (Dict.get2 currentPresident company playerShares
+                                                                |> Maybe.withDefault 0
+                                                           )
+                                           then Dict.insert company shareLeader presidents
+                                           else presidents
+                             )
+                |> Maybe.withDefault presidents
     }
 
 

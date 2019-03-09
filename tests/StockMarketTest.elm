@@ -214,6 +214,14 @@ suite =
                             |> Result.andThen (buyShareFromCompany p3 c3)
                             |> Result.map (.presidents >> Dict.get c3)
                             |> Expect.equal (Ok (Just p3))
+                , test "company launch" <|
+                    \_ ->
+                        market
+                            |> addCompany "NYC" 1
+                            |> buyShareFromCompany p3 "NYC"
+                            |> Result.andThen (buyShareFromCompany p3 "NYC")
+                            |> Result.map (.presidents >> Dict.get "NYC")
+                            |> Expect.equal (Ok (Just p3))
                 ]
             ]
         ]

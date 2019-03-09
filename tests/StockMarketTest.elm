@@ -11,7 +11,34 @@ import Util.Dict as Dict
 suite : Test
 suite =
     describe "StockMarket module"
-        [ describe "Simple market example" <|
+        [ describe "Market construction"
+              [ test "add player" <|
+                  \_ ->
+                      emptyMarket 1000 5 8
+                          |> addPlayer "Alice" 100
+                          |> addPlayer "Bob" 150
+                          |> Expect.all [ .playerOrder >> Expect.equal ["Alice","Bob"]
+                                        , .playerCash
+                                              >> Dict.get "Alice"
+                                              >> Expect.equal (Just 100)
+                                        , .playerCash
+                                              >> Dict.get "Bob"
+                                              >> Expect.equal (Just 150)
+                                        , .bank >> Expect.equal 750
+                                        ]
+              , test "add company" <|
+                  \_ ->
+                      emptyMarket 1000 5 8
+                          |> addCompany "Grand Trunk" 50
+                          |> Expect.all [ .companyCash
+                                              >> Dict.get "Grand Trunk"
+                                              >> Expect.equal (Just 0)
+                                        , .shareValues
+                                              >> Dict.get "Grand Trunk"
+                                              >> Expect.equal (Just 50)
+                                        ]
+              ]
+        , describe "Simple market example" <|
             let
                 p1 = "Alice"
                 p2 = "Bob"
@@ -22,7 +49,6 @@ suite =
                 c3 = "B&O"
                 market =
                     { playerOrder = [ p1, p2, p3, p4 ]
-                    , companyOrder = [ c1, c2, c3 ]
                     , playerCash =
                         Dict.fromList
                             [ ( p1, 100 )
@@ -47,7 +73,7 @@ suite =
                             , ( c2, p2 )
                             , ( c3, p4 )
                             ]
-                    , marketShares =
+                    , bankShares =
                         Dict.fromList
                             [ ( c2, 3 )
                             , ( c3, 3 )
@@ -107,16 +133,16 @@ suite =
                     \_ ->
                         companyShares market c2 |> Expect.equal 2
                 ]
-            , describe "buyShareFromMarket"
+            , describe "buyShareFromBank"
                 [ test "transaction test 1" <|
                     \_ ->
-                        buyShareFromMarket p1 c2 market
+                        buyShareFromBank p1 c2 market
                             |> Expect.all
                                 [ Result.map (\m -> playerStockValue m p1)
                                     >> Expect.equal (Ok 70)
                                 , Result.map (\m -> companyShares m c2)
                                     >> Expect.equal (Ok 2)
-                                , Result.map (.marketShares >> Dict.get c2)
+                                , Result.map (.bankShares >> Dict.get c2)
                                     >> Expect.equal (Ok (Just 2))
                                 , Result.map (.playerShares >> Dict.get2 p1 c2)
                                     >> Expect.equal (Ok (Just 2))
@@ -127,28 +153,28 @@ suite =
                                 ]
                 , test "transaction test 2" <|
                     \_ ->
-                        buyShareFromMarket p3 c2 market
+                        buyShareFromBank p3 c2 market
                             |> Expect.all
-                                [ Result.map (.marketShares >> Dict.get c2)
+                                [ Result.map (.bankShares >> Dict.get c2)
                                     >> Expect.equal (Ok (Just 2))
                                 , Result.map (.playerShares >> Dict.get2 p3 c2)
                                     >> Expect.equal (Ok (Just 1))
                                 ]
                 , test "certificate limit" <|
                     \_ ->
-                        buyShareFromMarket p2 c2 market |> Expect.err
+                        buyShareFromBank p2 c2 market |> Expect.err
                 , test "cash available" <|
                     \_ ->
-                        buyShareFromMarket p4 c2 market |> Expect.err
+                        buyShareFromBank p4 c2 market |> Expect.err
                 , test "share available" <|
                     \_ ->
-                        buyShareFromMarket p3 c1 market |> Expect.err
+                        buyShareFromBank p3 c1 market |> Expect.err
                 , test "presidency transfer" <|
                     \_ ->
                         market
-                            |> buyShareFromMarket p3 c3
-                            |> Result.andThen (buyShareFromMarket p3 c3)
-                            |> Result.andThen (buyShareFromMarket p3 c3)
+                            |> buyShareFromBank p3 c3
+                            |> Result.andThen (buyShareFromBank p3 c3)
+                            |> Result.andThen (buyShareFromBank p3 c3)
                             |> Result.map (.presidents >> Dict.get c3)
                             |> Expect.equal (Ok (Just p3))
                 ]

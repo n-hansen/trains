@@ -1,4 +1,4 @@
-module StockMarket exposing (CompanyName, Market, PlayerName, playerCertificateCount, playerStockValue, playerNetWorth, companyShares, buyShareFromMarket, buyShareFromCompany)
+module StockMarket exposing (..)
 
 import Dict exposing (Dict)
 import List
@@ -25,11 +25,10 @@ type alias CompanyName =
 
 type alias Market =
     { playerOrder : List PlayerName
-    , companyOrder : List CompanyName
     , playerCash : Dict PlayerName Int
     , playerShares : Dict PlayerName (Dict CompanyName Int)
     , presidents : Dict CompanyName PlayerName
-    , marketShares : Dict CompanyName Int
+    , bankShares : Dict CompanyName Int
     , companyCash : Dict CompanyName Int
     , shareValues : Dict CompanyName Int
     , bank : Int
@@ -37,7 +36,36 @@ type alias Market =
     , certificateLimit : Int
     }
 
+-- Market construction
 
+emptyMarket : Int -> Int -> Int -> Market
+emptyMarket initialBank totalShares certificateLimit =
+    { playerOrder = []
+    , playerCash = Dict.empty
+    , playerShares = Dict.empty
+    , presidents = Dict.empty
+    , bankShares = Dict.empty
+    , companyCash = Dict.empty
+    , shareValues = Dict.empty
+    , bank = initialBank
+    , totalShares = totalShares
+    , certificateLimit = certificateLimit
+    }
+
+addPlayer : PlayerName -> Int -> Market -> Market
+addPlayer player cash ({playerOrder, playerCash, bank} as market) =
+    { market
+        | playerOrder = playerOrder ++ [player]
+        , playerCash = Dict.insert player cash playerCash
+        , bank = bank - cash
+    }
+
+addCompany : CompanyName -> Int -> Market -> Market
+addCompany company shareValue ({companyCash, shareValues} as market) =
+    { market
+        | shareValues = Dict.insert company shareValue shareValues
+        , companyCash = Dict.insert company 0 companyCash
+    }
 
 -- Computed attributes
 
@@ -84,9 +112,9 @@ playerNetWorth ({ playerCash } as market) player =
 
 
 companyShares : Market -> CompanyName -> Int
-companyShares { playerShares, marketShares, totalShares } company =
+companyShares { playerShares, bankShares, totalShares } company =
     totalShares
-        - (Dict.get company marketShares |> Maybe.withDefault 0)
+        - (Dict.get company bankShares |> Maybe.withDefault 0)
         - (Dict.values playerShares
             |> List.concatMap Dict.toList
             |> List.filter (\( c, _ ) -> company == c)
@@ -99,8 +127,8 @@ companyShares { playerShares, marketShares, totalShares } company =
 -- Mutations
 
 
-buyShareFromMarket : PlayerName -> CompanyName -> Market -> Result String Market
-buyShareFromMarket player company ({ shareValues } as market) =
+buyShareFromBank : PlayerName -> CompanyName -> Market -> Result String Market
+buyShareFromBank player company ({ shareValues } as market) =
     case Dict.get company shareValues of
         Nothing ->
             Err <| "No share value for company " ++ company ++ "."
@@ -129,8 +157,8 @@ buyShareFromCompany player company ({ shareValues } as market) =
 
 
 removeMarketShare : CompanyName -> Market -> Result String Market
-removeMarketShare company ({ marketShares } as market) =
-    case Dict.get company marketShares of
+removeMarketShare company ({ bankShares } as market) =
+    case Dict.get company bankShares of
         Nothing ->
             Err <| "No shares in the stock market for " ++ company ++ "."
 
@@ -138,7 +166,7 @@ removeMarketShare company ({ marketShares } as market) =
             Err <| "No shares in the stock market for " ++ company ++ "."
 
         Just x ->
-            Ok <| { market | marketShares = Dict.insert company (x - 1) marketShares }
+            Ok <| { market | bankShares = Dict.insert company (x - 1) bankShares }
 
 
 addPlayerShare : PlayerName -> CompanyName -> Market -> Result String Market

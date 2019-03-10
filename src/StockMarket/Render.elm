@@ -10,6 +10,7 @@ import Html.Styled.Events as Events
 import List
 import List.Extra as List
 import Maybe
+import Maybe.Extra as Maybe
 import Set
 import StockMarket as SM exposing (Action(..), Market)
 import String
@@ -78,7 +79,7 @@ spreadsheetContainer {market} =
 
 
 playerInfo : RenderContext msg -> List (Html msg)
-playerInfo { market } =
+playerInfo { actionMessage, market } =
     let
         { playerOrder, activePlayer, playerCash } = market
         infoCells =
@@ -88,7 +89,10 @@ playerInfo { market } =
                         [ gridCell player
                             "playerName"
                             []
-                            []
+                            [ SetActivePlayer player
+                                  |> actionMessage
+                                  |> Events.onClick
+                            ]
                             [ Html.text <|
                                   player ++
                                   if Just player == activePlayer then "*" else ""
@@ -145,13 +149,17 @@ playerInfo { market } =
                             [ Html.text txt ]
                     )
     in
-    headings ++ infoCells
+        headings ++ infoCells
 
 
 stockInfo : RenderContext msg -> List (Html msg)
-stockInfo { market } =
+stockInfo { actionMessage, market } =
     let
-        { playerOrder, companyOrder, playerShares, presidents, bankShares, shareValues } = market
+        { playerOrder, activePlayer, companyOrder, playerShares, presidents, bankShares, shareValues } = market
+        activePlayerAction cont event =
+            activePlayer
+                |> Maybe.map (cont >> actionMessage >> event)
+                |> Maybe.toList
         companyInfo =
             companyOrder
                 |> List.concatMap
@@ -164,7 +172,10 @@ stockInfo { market } =
                         , gridCell "bankShares"
                             company
                             []
-                            []
+                            (activePlayerAction
+                                 (\player -> BuyShareFromBank player company)
+                                 Events.onClick
+                            )
                             [ Dict.get company bankShares
                                 |> Maybe.withDefault 0
                                 |> String.fromInt
@@ -173,7 +184,10 @@ stockInfo { market } =
                         , gridCell "companyShares"
                             company
                             []
-                            []
+                            (activePlayerAction
+                                 (\player -> BuyShareFromCompany player company)
+                                 Events.onClick
+                            )
                             [ SM.companyShares market company
                                 |> String.fromInt
                                 |> Html.text
@@ -213,7 +227,14 @@ stockInfo { market } =
                                 gridCell player
                                     company
                                     []
-                                    []
+                                    ( if activePlayer == Just player
+                                      then
+                                          SellShareToBank player company
+                                              |> actionMessage
+                                              |> Events.onClick
+                                              |> List.singleton
+                                      else []
+                                    )
                                     [ Dict.get2 player company playerShares
                                         |> Maybe.map String.fromInt
                                         |> Maybe.map

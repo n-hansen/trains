@@ -39,5 +39,5 @@ view = SM.renderSpreadsheet SmAction
 update (SmAction axn) model =
     model
         |> SM.tryAction axn
-        |> Result.mapError Debug.log
+        |> Result.mapError (Debug.log "Update Error: ")
         |> Result.withDefault model

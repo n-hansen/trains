@@ -16,18 +16,20 @@ main =
 
 init : SM.Market
 init =
-    SM.emptyMarket 1000 5 8
-        |> SM.addPlayer "Alice" 200
-        |> SM.addPlayer "Bob" 300
-        |> SM.addCompany "Grand Trunk" 25
-        |> SM.addCompany "NYC" 40
-        |> SM.tryAction (SM.Batch
-                             [ SM.BuyShareFromCompany "Alice" "Grand Trunk"
-                             , SM.BuyShareFromCompany "Alice" "Grand Trunk"
-                             , SM.BuyShareFromCompany "Bob" "Grand Trunk"
-                             ]
-                        )
-        |> Result.withDefault (SM.emptyMarket 1000 5 8)
+    let market = SM.emptyMarket (SM.linearShareValueTrack [0,10,25,40,50]) 1000 5 8
+    in
+        market
+            |> SM.addPlayer "Alice" 200
+            |> SM.addPlayer "Bob" 300
+            |> SM.addCompany "Grand Trunk" 25
+            |> SM.addCompany "NYC" 40
+            |> SM.tryAction (SM.Batch
+                                 [ SM.BuyShareFromCompany "Alice" "Grand Trunk"
+                                 , SM.BuyShareFromCompany "Alice" "Grand Trunk"
+                                 , SM.BuyShareFromCompany "Bob" "Grand Trunk"
+                                 ]
+                            )
+            |> Result.withDefault market
 
 
 type Message = SmAction SM.Action

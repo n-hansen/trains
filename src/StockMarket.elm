@@ -62,7 +62,6 @@ type alias Market =
     , bankShares : Dict CompanyName Int
     , companyCash : Dict CompanyName Int
     , shareValues : ShareValueTrack
-    , projection : Projection
     , bank : Int
     , totalShares : Int
     , certificateLimit : Int
@@ -84,7 +83,6 @@ emptyMarket shareValues initialBank totalShares certificateLimit =
     , bankShares = Dict.empty
     , companyCash = Dict.empty
     , shareValues = shareValues
-    , projection = []
     , bank = initialBank
     , totalShares = totalShares
     , certificateLimit = certificateLimit
@@ -196,8 +194,8 @@ companyShareValue { shareValues } company =
                 |> Maybe.map Tuple.first
 
 
-runProjection : Market -> List Market
-runProjection ({projection} as market) =
+runProjection : Projection -> Market -> List Market
+runProjection projection market =
     let
         runRound : List Action -> Market -> Market
         runRound =

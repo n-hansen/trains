@@ -93,7 +93,6 @@ suite =
                             , ( c2, 150 )
                             , ( c3, 5 )
                             ]
-                    , projection = [[MoveShareValueRight c1], [MoveShareValueLeft c2]]
                     , shareValues =
                         LinearTrack [ (0, [])
                                     , (15, [c1])
@@ -353,7 +352,7 @@ suite =
                 [ test "runProjection" <|
                     \_ ->
                         market
-                            |> runProjection
+                            |> runProjection [[MoveShareValueRight c1], [MoveShareValueLeft c2]]
                             |> Expect.all [ List.map (\m -> companyShareValue m c1)
                                                 >> Maybe.values
                                                 >> Expect.equal [15,20,20]

@@ -1,4 +1,4 @@
-module StockMarket.Render.Spreadsheet exposing (renderSpreadsheet)
+module StockMarket.Render.Spreadsheet exposing (renderSpreadsheet,buildLineSpec)
 
 import Basics.Extra exposing (..)
 import Char

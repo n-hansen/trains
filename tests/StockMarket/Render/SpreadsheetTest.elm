@@ -1,6 +1,6 @@
-module StockMarket.RenderTest exposing (suite)
+module StockMarket.Render.SpreadsheetTest exposing (suite)
 
-import StockMarket.Render exposing (..)
+import StockMarket.Render.Spreadsheet exposing (..)
 import Expect
 import Test exposing (..)
 import Tree
@@ -8,7 +8,7 @@ import Tree
 
 suite : Test
 suite =
-    describe "StockMarket.Render module"
+    describe "StockMarket.Render.Spreadsheet module"
         [ describe "CSS Grid"
               [ describe "buildLineSpec"
                     [ test "single section" <|

@@ -224,11 +224,13 @@ stockInfo { actionMessage, market, getColor } =
                             company
                             []
                             []
-                            [ Dict.get company shareValues
-                                |> Maybe.withDefault 0
-                                |> String.fromInt
-                                |> Html.text
-                            ]
+                            ( SM.companyShareValue market company
+                                  |> Maybe.map ( String.fromInt
+                                                     >> Html.text
+                                                     >> List.singleton
+                                               )
+                                  |> Maybe.withDefault []
+                            )
                         ]
                     )
 

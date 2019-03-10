@@ -3,6 +3,7 @@ module StockMarket exposing
     , CompanyName
     , Market
     , PlayerName
+    , ShareValueTrack(..)
     , addCompany
     , addPlayer
     , linearShareValueTrack

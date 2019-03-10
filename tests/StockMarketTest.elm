@@ -14,7 +14,7 @@ suite =
         [ describe "Market construction"
               [ test "add player" <|
                   \_ ->
-                      emptyMarket 1000 5 8
+                      emptyMarket (linearShareValueTrack []) 1000 5 8
                           |> addPlayer "Alice" 100
                           |> addPlayer "Bob" 150
                           |> Expect.all [ .playerOrder >> Expect.equal ["Alice","Bob"]
@@ -28,7 +28,7 @@ suite =
                                         ]
               , test "add company" <|
                   \_ ->
-                      emptyMarket 1000 5 8
+                      emptyMarket (linearShareValueTrack [50,60]) 1000 5 8
                           |> addCompany "Grand Trunk" 50
                           |> addCompany "NYC" 60
                           |> Expect.all [ .companyOrder >> Expect.equal ["Grand Trunk", "NYC"]
@@ -38,11 +38,9 @@ suite =
                                         , .companyCash
                                               >> Dict.get "NYC"
                                               >> Expect.equal (Just 0)
-                                        , .shareValues
-                                              >> Dict.get "Grand Trunk"
+                                        , (\m -> companyShareValue m "Grand Trunk")
                                               >> Expect.equal (Just 50)
-                                        , .shareValues
-                                              >> Dict.get "NYC"
+                                        , (\m -> companyShareValue m "NYC")
                                               >> Expect.equal (Just 60)
                                         ]
               ]
@@ -95,11 +93,12 @@ suite =
                             , ( c3, 5 )
                             ]
                     , shareValues =
-                        Dict.fromList
-                            [ ( c1, 15 )
-                            , ( c2, 20 )
-                            , ( c3, 120 )
-                            ]
+                        LinearTrack [ (0, [])
+                                    , (15, [c1])
+                                    , (20, [c2])
+                                    , (25, [])
+                                    , (120, [c3])
+                                    ]
                     , bank = 1000
                     , totalShares = 10
                     , certificateLimit = 3

@@ -3,6 +3,7 @@ module StockMarket exposing
     , CompanyName
     , Market
     , PlayerName
+    , Projection
     , ShareValueTrack(..)
     , addCompany
     , addPlayer
@@ -13,9 +14,11 @@ module StockMarket exposing
     , playerCertificateCount
     , playerNetWorth
     , playerStockValue
+    , runProjection
     , tryAction
     )
 
+import Basics.Extra exposing (..)
 import Dict exposing (Dict)
 import List
 import List.Extra as List
@@ -46,6 +49,9 @@ type ShareValueTrack =
     LinearTrack (List (Int, List CompanyName))
 
 
+type alias Projection = List (List Action)
+
+
 type alias Market =
     { playerOrder : List PlayerName
     , activePlayer : Maybe PlayerName
@@ -56,6 +62,7 @@ type alias Market =
     , bankShares : Dict CompanyName Int
     , companyCash : Dict CompanyName Int
     , shareValues : ShareValueTrack
+    , projection : Projection
     , bank : Int
     , totalShares : Int
     , certificateLimit : Int
@@ -77,6 +84,7 @@ emptyMarket shareValues initialBank totalShares certificateLimit =
     , bankShares = Dict.empty
     , companyCash = Dict.empty
     , shareValues = shareValues
+    , projection = []
     , bank = initialBank
     , totalShares = totalShares
     , certificateLimit = certificateLimit
@@ -188,10 +196,23 @@ companyShareValue { shareValues } company =
                 |> Maybe.map Tuple.first
 
 
+runProjection : Market -> List Market
+runProjection ({projection} as market) =
+    let
+        runRound : List Action -> Market -> Market
+        runRound =
+            flip <|
+                List.foldl (\a m -> tryAction a m |> Result.withDefault market)
+    in
+        List.scanl runRound market projection
+
+
+
 -- Action API
 {-
 Reifying user actions into values akin to algebraic effects has two distinct advantages:
-  1. It allows us to log user-level actions to make traversing the state history easier.
+  1. It allows us to log user-level actions to make storing projected actions and traversing
+     the state history easier.
   2. It allows us to provide a simple interface for monadically chaining actions in a way
      that plays nicely with the Elm architecture.
  ~3. It allows us to build a functor out of user actions.~

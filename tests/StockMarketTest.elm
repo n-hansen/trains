@@ -2,6 +2,7 @@ module StockMarketTest exposing (suite)
 
 import Dict
 import Expect
+import Maybe.Extra as Maybe
 import Result
 import StockMarket exposing (..)
 import Test exposing (..)
@@ -92,6 +93,7 @@ suite =
                             , ( c2, 150 )
                             , ( c3, 5 )
                             ]
+                    , projection = [[MoveShareValueRight c1], [MoveShareValueLeft c2]]
                     , shareValues =
                         LinearTrack [ (0, [])
                                     , (15, [c1])
@@ -346,6 +348,19 @@ suite =
                                                 ]
                                          )
                             |> Expect.err
+                ]
+            , describe "market projection"
+                [ test "runProjection" <|
+                    \_ ->
+                        market
+                            |> runProjection
+                            |> Expect.all [ List.map (\m -> companyShareValue m c1)
+                                                >> Maybe.values
+                                                >> Expect.equal [15,20,20]
+                                          , List.map (\m -> companyShareValue m c2)
+                                                >> Maybe.values
+                                                >> Expect.equal [20,20,15]
+                                          ]
                 ]
             ]
         ]

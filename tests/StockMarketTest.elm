@@ -310,5 +310,42 @@ suite =
                             |> Expect.equal (Ok (Just p3))
 
                 ]
+            , describe "share movement"
+                [ test "move share right 1" <|
+                    \_ ->
+                        market
+                            |> tryAction (MoveShareValueRight c1)
+                            |> Result.map (\m -> companyShareValue m c1)
+                            |> Expect.equal (Ok (Just 20))
+                , test "move share right 2" <|
+                    \_ ->
+                        market
+                            |> tryAction (Batch [ MoveShareValueRight c1
+                                                , MoveShareValueRight c2
+                                                ]
+                                         )
+                            |> Expect.all [ Result.map (\m -> companyShareValue m c1)
+                                                >> Expect.equal (Ok (Just 20))
+                                          , Result.map (\m -> companyShareValue m c2)
+                                                >> Expect.equal (Ok (Just 25))
+                                          ]
+                , test "move share right 3" <|
+                    \_ ->
+                        market |> tryAction (MoveShareValueRight c3) |> Expect.err
+                , test "move share left 1" <|
+                    \_ ->
+                        market
+                            |> tryAction (MoveShareValueLeft c1)
+                            |> Result.map (\m -> companyShareValue m c1)
+                            |> Expect.equal (Ok (Just 0))
+                , test "move share left 2" <|
+                    \_ ->
+                        market
+                            |> tryAction (Batch [ MoveShareValueLeft c1
+                                                , MoveShareValueLeft c1
+                                                ]
+                                         )
+                            |> Expect.err
+                ]
             ]
         ]

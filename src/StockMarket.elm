@@ -19,12 +19,14 @@ module StockMarket exposing
 import Dict exposing (Dict)
 import List
 import List.Extra as List
+import List.Zipper as Zipper
 import Maybe
 import Maybe.Extra as Maybe
 import Result
 import Result.Extra as Result
 import Tuple
 import Util.Dict as Dict
+import Util.List as List
 import Util.Result as Result
 
 
@@ -200,6 +202,8 @@ type Action
     = Batch (List Action)
     | BuyShareFromBank PlayerName CompanyName
     | BuyShareFromCompany PlayerName CompanyName
+    | MoveShareValueRight CompanyName
+    | MoveShareValueLeft CompanyName
     | SellShareToBank PlayerName CompanyName
     | SetActivePlayer PlayerName
 
@@ -222,12 +226,18 @@ tryAction action market =
         SetActivePlayer p ->
             setActivePlayer p market
 
+        MoveShareValueRight c ->
+            moveShareValueRight c market
+
+        MoveShareValueLeft c ->
+            moveShareValueLeft c market
+
 
 -- Action functions
 {-
 These mutations should be in 1:1 correspondence with reified action values. In general, there
-should be very little error-checking at this level: by failing as far down the call stack as
-possible, we keep our top-level functions readable and minimize code duplication.
+should be very little error-checking at this level for multipart actions: by failing as far down
+the call stack as possible, we keep our top-level functions readable and minimize code duplication.
  -}
 
 
@@ -279,6 +289,53 @@ setActivePlayer player ({ playerOrder, activePlayer } as market) =
     if List.member player playerOrder
     then Ok {market | activePlayer = Just player}
     else Err <| "Player " ++ player ++ " doesn't appear to exist."
+
+
+moveShareValueRight : CompanyName -> Market -> Result String Market
+moveShareValueRight company ({ shareValues } as market) =
+    case shareValues of
+        LinearTrack track ->
+            Zipper.fromList track
+                |> Maybe.andThen (Zipper.find (Tuple.second >> List.member company))
+                |> Maybe.map (Zipper.mapCurrent
+                                  (Tuple.mapSecond
+                                       <| List.filter ((/=) company)
+                                  )
+                             )
+                |> Maybe.andThen Zipper.next
+                |> Maybe.map (Zipper.mapCurrent
+                                  (Tuple.mapSecond
+                                       <| List.snoc company
+                                  )
+                                  >> Zipper.toList
+                                  >> LinearTrack
+                                  >> (\sv -> { market | shareValues = sv })
+                             )
+                |> Result.fromMaybe ("Rightward track movement failed for company " ++ company ++ ".")
+
+
+moveShareValueLeft : CompanyName -> Market -> Result String Market
+moveShareValueLeft company ({ shareValues } as market) =
+    case shareValues of
+        LinearTrack track ->
+            Zipper.fromList track
+                |> Maybe.andThen (Zipper.find (Tuple.second >> List.member company))
+                |> Maybe.map (Zipper.mapCurrent
+                                  (Tuple.mapSecond
+                                       <| List.filter ((/=) company)
+                                  )
+                             )
+                |> Maybe.andThen Zipper.previous
+                |> Maybe.map (Zipper.mapCurrent
+                                  (Tuple.mapSecond
+                                       <| List.snoc company
+                                  )
+                                  >> Zipper.toList
+                                  >> LinearTrack
+                                  >> (\sv -> { market | shareValues = sv })
+                             )
+                |> Result.fromMaybe ("Leftward track movement failed for company " ++ company ++ ".")
+
 
 
 -- Lower level mutations

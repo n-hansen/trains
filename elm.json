@@ -15,6 +15,7 @@
             "elm-community/maybe-extra": "5.0.0",
             "elm-community/result-extra": "2.2.1",
             "rtfeldman/elm-css": "16.0.0",
+            "wernerdegroot/listzipper": "3.2.0",
             "zwilias/elm-rosetree": "1.4.0"
         },
         "indirect": {

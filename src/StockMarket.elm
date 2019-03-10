@@ -1,16 +1,17 @@
-module StockMarket exposing ( PlayerName
-                            , CompanyName
-                            , Market
-                            , emptyMarket
-                            , addPlayer
-                            , addCompany
-                            , playerCertificateCount
-                            , playerStockValue
-                            , playerNetWorth
-                            , companyShares
-                            , Action(..)
-                            , tryAction
-                            )
+module StockMarket exposing
+    ( Action(..)
+    , CompanyName
+    , Market
+    , PlayerName
+    , addCompany
+    , addPlayer
+    , companyShares
+    , emptyMarket
+    , playerCertificateCount
+    , playerNetWorth
+    , playerStockValue
+    , tryAction
+    )
 
 import Dict exposing (Dict)
 import List
@@ -51,7 +52,9 @@ type alias Market =
     }
 
 
+
 -- Market construction
+
 
 emptyMarket : Int -> Int -> Int -> Market
 emptyMarket initialBank totalShares certificateLimit =
@@ -68,21 +71,25 @@ emptyMarket initialBank totalShares certificateLimit =
     , certificateLimit = certificateLimit
     }
 
+
 addPlayer : PlayerName -> Int -> Market -> Market
-addPlayer player cash ({playerOrder, playerCash, bank} as market) =
+addPlayer player cash ({ playerOrder, playerCash, bank } as market) =
     { market
-        | playerOrder = playerOrder ++ [player]
+        | playerOrder = playerOrder ++ [ player ]
         , playerCash = Dict.insert player cash playerCash
         , bank = bank - cash
     }
 
+
 addCompany : CompanyName -> Int -> Market -> Market
-addCompany company shareValue ({companyOrder, companyCash, shareValues} as market) =
+addCompany company shareValue ({ companyOrder, companyCash, shareValues } as market) =
     { market
-        | companyOrder = companyOrder ++ [company]
+        | companyOrder = companyOrder ++ [ company ]
         , shareValues = Dict.insert company shareValue shareValues
         , companyCash = Dict.insert company 0 companyCash
     }
+
+
 
 -- Computed attributes
 
@@ -140,12 +147,15 @@ companyShares { playerShares, bankShares, totalShares } company =
           )
 
 
+
 -- Action API
 
 
-type Action = Batch (List Action)
-            | BuyShareFromBank PlayerName CompanyName
-            | BuyShareFromCompany PlayerName CompanyName
+type Action
+    = Batch (List Action)
+    | BuyShareFromBank PlayerName CompanyName
+    | BuyShareFromCompany PlayerName CompanyName
+    | SellShareToBank PlayerName CompanyName
 
 
 tryAction : Action -> Market -> Result String Market
@@ -153,8 +163,15 @@ tryAction action market =
     case action of
         Batch actions ->
             List.foldl (tryAction >> Result.andThen) (Ok market) actions
-        BuyShareFromBank p c -> buyShareFromBank p c market
-        BuyShareFromCompany p c -> buyShareFromCompany p c market
+
+        BuyShareFromBank p c ->
+            buyShareFromBank p c market
+
+        BuyShareFromCompany p c ->
+            buyShareFromCompany p c market
+
+        SellShareToBank p c ->
+            sellShareToBank p c market
 
 
 
@@ -169,7 +186,7 @@ buyShareFromBank player company ({ shareValues } as market) =
 
         Just shareValue ->
             market
-                |> removeMarketShare company
+                |> removeBankShare company
                 |> Result.andThen (addPlayerShare player company)
                 |> Result.andThen (debitPlayer player shareValue)
                 |> Result.andThen (creditBank shareValue)
@@ -185,13 +202,44 @@ buyShareFromCompany player company ({ shareValues } as market) =
             market
                 |> addPlayerShare player company
                 |> Result.guard (\m -> companyShares m company >= 0)
-                   ("No shares held by company " ++ company ++ ".")
+                    ("No shares held by company " ++ company ++ ".")
                 |> Result.andThen (debitPlayer player shareValue)
                 |> Result.andThen (creditCompany company shareValue)
 
 
-removeMarketShare : CompanyName -> Market -> Result String Market
-removeMarketShare company ({ bankShares } as market) =
+sellShareToBank : PlayerName -> CompanyName -> Market -> Result String Market
+sellShareToBank player company ({ shareValues } as market) =
+    case Dict.get company shareValues of
+        Nothing ->
+            Err <| "No share value for company " ++ company ++ "."
+
+        Just shareValue ->
+            market
+                |> removePlayerShare player company
+                |> Result.andThen (addBankShare company)
+                |> Result.andThen (creditPlayer player shareValue)
+                |> Result.andThen (debitBank shareValue)
+
+
+addBankShare : CompanyName -> Market -> Result String Market
+addBankShare company ({ totalShares, bankShares } as market) =
+    let
+        currBankShares =
+            Dict.get company bankShares
+                |> Maybe.withDefault 0
+    in
+    if currBankShares + 1 > totalShares // 2 then
+        Err "No more than 50% of a company's shares may be on the market."
+
+    else
+        Ok
+            { market
+                | bankShares = Dict.insert company (currBankShares + 1) bankShares
+            }
+
+
+removeBankShare : CompanyName -> Market -> Result String Market
+removeBankShare company ({ bankShares } as market) =
     case Dict.get company bankShares of
         Nothing ->
             Err <| "No shares in the stock market for " ++ company ++ "."
@@ -223,27 +271,64 @@ addPlayerShare player company ({ playerShares, certificateLimit } as market) =
         |> Result.map (updatePresidency company)
 
 
+removePlayerShare : PlayerName -> CompanyName -> Market -> Result String Market
+removePlayerShare player company ({ playerShares, presidents } as market) =
+    if
+        Dict.get company presidents
+            == Just player
+            && Dict.get2 player company playerShares
+            == Just 2
+    then
+        Err "President's share may not be sold."
+
+    else
+        case Dict.get2 player company playerShares of
+            Nothing ->
+                Err <| "No shares of " ++ company ++ " owned by " ++ player ++ "."
+
+            Just 0 ->
+                Err <| "No shares of " ++ company ++ " owned by " ++ player ++ "."
+
+            Just x ->
+                { market
+                    | playerShares =
+                        playerShares
+                            |> Dict.update player (Maybe.map <| Dict.insert company (x - 1))
+                }
+                    |> updatePresidency company
+                    |> Ok
+
+
 updatePresidency : CompanyName -> Market -> Market
 updatePresidency company ({ presidents, playerShares } as market) =
     { market
         | presidents =
             Dict.toList playerShares
-                |> List.map (\(player,shares) ->
-                                 Dict.get company shares
-                                     |> Maybe.map (Tuple.pair player)
-                            )
+                |> List.map
+                    (\( player, shares ) ->
+                        Dict.get company shares
+                            |> Maybe.map (Tuple.pair player)
+                    )
                 |> Maybe.values
                 |> List.maximumBy Tuple.second
-                |> Maybe.map ( \(shareLeader, shareCount) ->
-                                   case Dict.get company presidents of
-                                       Nothing -> Dict.insert company shareLeader presidents
-                                       Just currentPresident ->
-                                           if shareCount > (Dict.get2 currentPresident company playerShares
-                                                                |> Maybe.withDefault 0
-                                                           )
-                                           then Dict.insert company shareLeader presidents
-                                           else presidents
-                             )
+                |> Maybe.map
+                    (\( shareLeader, shareCount ) ->
+                        case Dict.get company presidents of
+                            Nothing ->
+                                Dict.insert company shareLeader presidents
+
+                            Just currentPresident ->
+                                if
+                                    shareCount
+                                        > (Dict.get2 currentPresident company playerShares
+                                            |> Maybe.withDefault 0
+                                          )
+                                then
+                                    Dict.insert company shareLeader presidents
+
+                                else
+                                    presidents
+                    )
                 |> Maybe.withDefault presidents
     }
 

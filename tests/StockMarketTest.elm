@@ -145,7 +145,8 @@ suite =
             , describe "buyShareFromBank"
                 [ test "transaction test 1" <|
                     \_ ->
-                        buyShareFromBank p1 c2 market
+                        market
+                            |> tryAction (BuyShareFromBank p1 c2)
                             |> Expect.all
                                 [ Result.map (\m -> playerStockValue m p1)
                                     >> Expect.equal (Ok 70)
@@ -162,7 +163,8 @@ suite =
                                 ]
                 , test "transaction test 2" <|
                     \_ ->
-                        buyShareFromBank p3 c2 market
+                        market
+                            |> tryAction (BuyShareFromBank p3 c2)
                             |> Expect.all
                                 [ Result.map (.bankShares >> Dict.get c2)
                                     >> Expect.equal (Ok (Just 2))
@@ -171,27 +173,39 @@ suite =
                                 ]
                 , test "certificate limit" <|
                     \_ ->
-                        buyShareFromBank p2 c2 market |> Expect.err
+                        market |> tryAction (BuyShareFromBank p2 c2) |> Expect.err
                 , test "cash available" <|
                     \_ ->
-                        buyShareFromBank p4 c2 market |> Expect.err
+                        market |> tryAction (BuyShareFromBank p4 c2) |> Expect.err
                 , test "share available" <|
                     \_ ->
-                        buyShareFromBank p3 c1 market |> Expect.err
-                , test "presidency transfer" <|
+                        market |> tryAction (BuyShareFromBank p3 c1) |> Expect.err
+                , test "presidency transfer 1" <|
                     \_ ->
                         market
-                            |> buyShareFromBank p3 c3
-                            |> Result.andThen (buyShareFromBank p3 c3)
-                            |> Result.andThen (buyShareFromBank p3 c3)
+                            |> tryAction (Batch [ BuyShareFromBank p3 c3
+                                                , BuyShareFromBank p3 c3
+                                                , BuyShareFromBank p3 c3
+                                                ]
+                                         )
                             |> Result.map (.presidents >> Dict.get c3)
                             |> Expect.equal (Ok (Just p3))
+                , test "presidency transfer 2" <|
+                    \_ ->
+                        market
+                            |> tryAction (Batch [ BuyShareFromBank p3 c3
+                                                , BuyShareFromBank p3 c3
+                                                ]
+                                         )
+                            |> Result.map (.presidents >> Dict.get c3)
+                            |> Expect.equal (Ok (Just p4))
+
                 ]
             , describe "buyShareFromCompany"
                 [ test "transaction test" <|
                     \_ ->
                         market
-                            |> buyShareFromCompany p1 c2
+                            |> tryAction (BuyShareFromCompany p1 c2)
                             |> Expect.all
                                 [ Result.map (.playerShares >> Dict.get2 p1 c2)
                                     >> Expect.equal (Ok (Just 2))
@@ -204,31 +218,47 @@ suite =
                                 ]
                 , test "certificate limit" <|
                     \_ ->
-                        buyShareFromCompany p2 c2 market |> Expect.err
+                        market |> tryAction (BuyShareFromCompany p2 c2) |> Expect.err
                 , test "cash available" <|
                     \_ ->
-                        buyShareFromCompany p4 c2 market |> Expect.err
+                        market |> tryAction (BuyShareFromCompany p4 c2) |> Expect.err
                 , test "share available" <|
                     \_ ->
                         market
-                            |> buyShareFromCompany p3 c2
-                            |> Result.andThen (buyShareFromCompany p3 c2)
-                            |> Result.andThen (buyShareFromCompany p3 c2)
+                            |> tryAction (Batch [ BuyShareFromCompany p3 c2
+                                                , BuyShareFromCompany p3 c2
+                                                , BuyShareFromCompany p3 c2
+                                                ]
+                                         )
                             |> Expect.err
-                , test "presidency transfer" <|
+                , test "presidency transfer 1" <|
                     \_ ->
                         market
-                            |> buyShareFromCompany p3 c3
-                            |> Result.andThen (buyShareFromCompany p3 c3)
-                            |> Result.andThen (buyShareFromCompany p3 c3)
+                            |> tryAction (Batch [ BuyShareFromCompany p3 c3
+                                                , BuyShareFromCompany p3 c3
+                                                , BuyShareFromCompany p3 c3
+                                                ]
+                                         )
                             |> Result.map (.presidents >> Dict.get c3)
                             |> Expect.equal (Ok (Just p3))
+                , test "presidency transfer 2" <|
+                    \_ ->
+                        market
+                            |> tryAction (Batch [ BuyShareFromCompany p3 c3
+                                                , BuyShareFromCompany p3 c3
+                                                ]
+                                         )
+                            |> Result.map (.presidents >> Dict.get c3)
+                            |> Expect.equal (Ok (Just p4))
+
                 , test "company launch" <|
                     \_ ->
                         market
                             |> addCompany "NYC" 1
-                            |> buyShareFromCompany p3 "NYC"
-                            |> Result.andThen (buyShareFromCompany p3 "NYC")
+                            |> tryAction (Batch [ BuyShareFromCompany p3 "NYC"
+                                                , BuyShareFromCompany p3 "NYC"
+                                                ]
+                                         )
                             |> Result.map (.presidents >> Dict.get "NYC")
                             |> Expect.equal (Ok (Just p3))
                 ]

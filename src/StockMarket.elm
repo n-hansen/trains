@@ -1,4 +1,16 @@
-module StockMarket exposing (..)
+module StockMarket exposing ( PlayerName
+                            , CompanyName
+                            , Market
+                            , emptyMarket
+                            , addPlayer
+                            , addCompany
+                            , playerCertificateCount
+                            , playerStockValue
+                            , playerNetWorth
+                            , companyShares
+                            , Action(..)
+                            , tryAction
+                            )
 
 import Dict exposing (Dict)
 import List
@@ -37,6 +49,7 @@ type alias Market =
     , totalShares : Int
     , certificateLimit : Int
     }
+
 
 -- Market construction
 
@@ -125,6 +138,23 @@ companyShares { playerShares, bankShares, totalShares } company =
             |> List.map Tuple.second
             |> List.sum
           )
+
+
+-- Action API
+
+
+type Action = Batch (List Action)
+            | BuyShareFromBank PlayerName CompanyName
+            | BuyShareFromCompany PlayerName CompanyName
+
+
+tryAction : Action -> Market -> Result String Market
+tryAction action market =
+    case action of
+        Batch actions ->
+            List.foldl (tryAction >> Result.andThen) (Ok market) actions
+        BuyShareFromBank p c -> buyShareFromBank p c market
+        BuyShareFromCompany p c -> buyShareFromCompany p c market
 
 
 

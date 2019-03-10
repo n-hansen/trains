@@ -83,6 +83,7 @@ spreadsheetContainer {market} =
             Attr.css
                 [ gridDisplay
                 , gridTemplate rows columns
+                , Css.cursor Css.pointer
                 ]
     in
     Html.div [ gridContainerStyle ]
@@ -228,6 +229,23 @@ stockInfo { actionMessage, market, getColor } =
                                   |> Maybe.map ( String.fromInt
                                                      >> Html.text
                                                      >> List.singleton
+                                                     >> Html.span []
+                                                     >> (\number ->
+                                                             [ Html.span
+                                                                   [ MoveShareValueLeft company
+                                                                         |> actionMessage
+                                                                         |> Events.onClick
+                                                                   ]
+                                                                   [ Html.text "\u{25c0} " ]
+                                                             , number
+                                                             , Html.span
+                                                                   [ MoveShareValueRight company
+                                                                         |> actionMessage
+                                                                         |> Events.onClick
+                                                                   ]
+                                                                   [ Html.text " \u{25b6}" ]
+                                                             ]
+                                                        )
                                                )
                                   |> Maybe.withDefault []
                             )

@@ -5,6 +5,8 @@ module StockMarket exposing
     , PlayerName
     , addCompany
     , addPlayer
+    , linearShareValueTrack
+    , companyShareValue
     , companyShares
     , emptyMarket
     , playerCertificateCount
@@ -37,6 +39,10 @@ type alias CompanyName =
     String
 
 
+type ShareValueTrack =
+    LinearTrack (List (Int, List CompanyName))
+
+
 type alias Market =
     { playerOrder : List PlayerName
     , activePlayer : Maybe PlayerName
@@ -46,7 +52,7 @@ type alias Market =
     , presidents : Dict CompanyName PlayerName
     , bankShares : Dict CompanyName Int
     , companyCash : Dict CompanyName Int
-    , shareValues : Dict CompanyName Int
+    , shareValues : ShareValueTrack
     , bank : Int
     , totalShares : Int
     , certificateLimit : Int
@@ -57,8 +63,8 @@ type alias Market =
 -- Market construction
 
 
-emptyMarket : Int -> Int -> Int -> Market
-emptyMarket initialBank totalShares certificateLimit =
+emptyMarket : ShareValueTrack -> Int -> Int -> Int -> Market
+emptyMarket shareValues initialBank totalShares certificateLimit =
     { playerOrder = []
     , activePlayer = Nothing
     , companyOrder = []
@@ -67,7 +73,7 @@ emptyMarket initialBank totalShares certificateLimit =
     , presidents = Dict.empty
     , bankShares = Dict.empty
     , companyCash = Dict.empty
-    , shareValues = Dict.empty
+    , shareValues = shareValues
     , bank = initialBank
     , totalShares = totalShares
     , certificateLimit = certificateLimit
@@ -90,13 +96,31 @@ addCompany : CompanyName -> Int -> Market -> Market
 addCompany company shareValue ({ companyOrder, companyCash, shareValues } as market) =
     { market
         | companyOrder = companyOrder ++ [ company ]
-        , shareValues = Dict.insert company shareValue shareValues
+        , shareValues = insertCompanyShareValue company shareValue shareValues
         , companyCash = Dict.insert company 0 companyCash
     }
 
 
+linearShareValueTrack : List Int -> ShareValueTrack
+linearShareValueTrack =
+    List.sort
+        >> List.map (\v -> (v,[]))
+        >> LinearTrack
 
--- Computed attributes
+
+insertCompanyShareValue : CompanyName -> Int -> ShareValueTrack -> ShareValueTrack
+insertCompanyShareValue company value shareValues =
+    case shareValues of
+        LinearTrack track ->
+            track
+                |> List.findIndex (Tuple.first >> (<=) value)
+                |> Maybe.withDefault 0
+                |> (\ix -> List.updateAt ix (Tuple.mapSecond <| \cs -> cs ++ [company]) track)
+                |> LinearTrack
+
+
+
+-- Computed reads
 
 
 playerCertificateCount : Market -> PlayerName -> Int
@@ -117,13 +141,13 @@ playerCertificateCount { presidents, playerShares } player =
 
 
 playerStockValue : Market -> PlayerName -> Int
-playerStockValue { playerShares, shareValues } player =
+playerStockValue ({ playerShares } as market) player =
     Dict.get player playerShares
         |> Maybe.map
             (Dict.toList
                 >> List.map
                     (\( company, shares ) ->
-                        Dict.get company shareValues
+                        companyShareValue market company
                             |> Maybe.map (\val -> val * shares)
                             |> Maybe.withDefault 0
                     )
@@ -151,6 +175,14 @@ companyShares { playerShares, bankShares, totalShares } company =
             |> List.sum
           )
 
+
+companyShareValue : Market -> CompanyName -> Maybe Int
+companyShareValue { shareValues } company =
+    case shareValues of
+        LinearTrack track ->
+            track
+                |> List.find (Tuple.second >> List.member company)
+                |> Maybe.map Tuple.first
 
 
 -- Action API
@@ -199,8 +231,8 @@ possible, we keep our top-level functions readable and minimize code duplication
 
 
 buyShareFromBank : PlayerName -> CompanyName -> Market -> Result String Market
-buyShareFromBank player company ({ shareValues } as market) =
-    case Dict.get company shareValues of
+buyShareFromBank player company market =
+    case companyShareValue market company of
         Nothing ->
             Err <| "No share value for company " ++ company ++ "."
 
@@ -213,8 +245,8 @@ buyShareFromBank player company ({ shareValues } as market) =
 
 
 buyShareFromCompany : PlayerName -> CompanyName -> Market -> Result String Market
-buyShareFromCompany player company ({ shareValues } as market) =
-    case Dict.get company shareValues of
+buyShareFromCompany player company market =
+    case companyShareValue market company of
         Nothing ->
             Err <| "No share value for company " ++ company ++ "."
 
@@ -228,8 +260,8 @@ buyShareFromCompany player company ({ shareValues } as market) =
 
 
 sellShareToBank : PlayerName -> CompanyName -> Market -> Result String Market
-sellShareToBank player company ({ shareValues } as market) =
-    case Dict.get company shareValues of
+sellShareToBank player company market =
+    case companyShareValue market company of
         Nothing ->
             Err <| "No share value for company " ++ company ++ "."
 

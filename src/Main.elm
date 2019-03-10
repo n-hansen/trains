@@ -14,32 +14,60 @@ main =
                     , update = update
                     }
 
-init : SM.Market
+
+type alias Model =
+    { market : SM.Market
+    , projection : SM.Projection
+    }
+
+
+init : Model
 init =
-    let market = SM.emptyMarket (SM.linearShareValueTrack [0,10,25,40,50]) 1000 5 8
+    let
+        emptyMarket = SM.emptyMarket (SM.linearShareValueTrack [0,10,25,40,50]) 1000 5 8
+        market =
+            emptyMarket
+                |> SM.addPlayer "Alice" 200
+                |> SM.addPlayer "Bob" 300
+                |> SM.addCompany "Grand Trunk" 25
+                |> SM.addCompany "NYC" 40
+                |> SM.tryAction (SM.Batch
+                                     [ SM.BuyShareFromCompany "Alice" "Grand Trunk"
+                                     , SM.BuyShareFromCompany "Alice" "Grand Trunk"
+                                     , SM.BuyShareFromCompany "Bob" "Grand Trunk"
+                                     ]
+                                )
+                |> Result.withDefault emptyMarket
+        projection = []
     in
+        { market = market
+        , projection = projection
+        }
+
+
+type Message = MarketAction SM.Action
+             | UpdateProjection SM.Projection
+
+
+view {market, projection} =
+    SM.createRenderContext
+        MarketAction
+        UpdateProjection
         market
-            |> SM.addPlayer "Alice" 200
-            |> SM.addPlayer "Bob" 300
-            |> SM.addCompany "Grand Trunk" 25
-            |> SM.addCompany "NYC" 40
-            |> SM.tryAction (SM.Batch
-                                 [ SM.BuyShareFromCompany "Alice" "Grand Trunk"
-                                 , SM.BuyShareFromCompany "Alice" "Grand Trunk"
-                                 , SM.BuyShareFromCompany "Bob" "Grand Trunk"
-                                 ]
-                            )
-            |> Result.withDefault market
+        projection
+        |> SM.renderMarket
 
 
-type Message = SmAction SM.Action
+update message model =
+    case message of
+        MarketAction axn ->
+            model.market
+                |> SM.tryAction axn
+                |> Result.map (\mkt -> {model | market = mkt})
+                |> Result.mapError (Debug.log "Update Error: ")
+                |> Result.withDefault model
 
-
-view = SM.renderSpreadsheet SmAction
-
-
-update (SmAction axn) model =
-    model
-        |> SM.tryAction axn
-        |> Result.mapError (Debug.log "Update Error: ")
-        |> Result.withDefault model
+        UpdateProjection proj ->
+            { model
+                | projection = proj
+            }

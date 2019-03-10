@@ -57,6 +57,7 @@ suite =
                 c3 = "B&O"
                 market =
                     { playerOrder = [ p1, p2, p3, p4 ]
+                    , activePlayer = Just p1
                     , companyOrder = [c1, c2, c3]
                     , playerCash =
                         Dict.fromList
@@ -104,7 +105,13 @@ suite =
                     , certificateLimit = 3
                     }
             in
-            [ describe "playerCertificateCount"
+            [ test "setActivePlayer" <|
+                \_ ->
+                    market
+                        |> tryAction (SetActivePlayer p2)
+                        |> Result.map .activePlayer
+                        |> Expect.equal (Ok (Just p2))
+            , describe "playerCertificateCount"
                 [ test "test 1" <|
                     \_ ->
                         playerCertificateCount market p1 |> Expect.equal 2

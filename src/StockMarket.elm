@@ -39,6 +39,7 @@ type alias CompanyName =
 
 type alias Market =
     { playerOrder : List PlayerName
+    , activePlayer : Maybe PlayerName
     , companyOrder : List CompanyName
     , playerCash : Dict PlayerName Int
     , playerShares : Dict PlayerName (Dict CompanyName Int)
@@ -59,6 +60,7 @@ type alias Market =
 emptyMarket : Int -> Int -> Int -> Market
 emptyMarket initialBank totalShares certificateLimit =
     { playerOrder = []
+    , activePlayer = Nothing
     , companyOrder = []
     , playerCash = Dict.empty
     , playerShares = Dict.empty
@@ -73,9 +75,12 @@ emptyMarket initialBank totalShares certificateLimit =
 
 
 addPlayer : PlayerName -> Int -> Market -> Market
-addPlayer player cash ({ playerOrder, playerCash, bank } as market) =
+addPlayer player cash ({ playerOrder, playerCash, bank, activePlayer } as market) =
     { market
         | playerOrder = playerOrder ++ [ player ]
+        , activePlayer = case activePlayer of
+                             Just someone -> activePlayer
+                             Nothing -> Just player
         , playerCash = Dict.insert player cash playerCash
         , bank = bank - cash
     }
@@ -163,6 +168,7 @@ type Action
     | BuyShareFromBank PlayerName CompanyName
     | BuyShareFromCompany PlayerName CompanyName
     | SellShareToBank PlayerName CompanyName
+    | SetActivePlayer PlayerName
 
 
 tryAction : Action -> Market -> Result String Market
@@ -180,6 +186,8 @@ tryAction action market =
         SellShareToBank p c ->
             sellShareToBank p c market
 
+        SetActivePlayer p ->
+            setActivePlayer p market
 
 
 -- Action functions
@@ -231,6 +239,13 @@ sellShareToBank player company ({ shareValues } as market) =
                 |> Result.andThen (addBankShare company)
                 |> Result.andThen (creditPlayer player shareValue)
                 |> Result.andThen (debitBank shareValue)
+
+
+setActivePlayer : PlayerName -> Market -> Result String Market
+setActivePlayer player ({ playerOrder, activePlayer } as market) =
+    if List.member player playerOrder
+    then Ok {market | activePlayer = Just player}
+    else Err <| "Player " ++ player ++ " doesn't appear to exist."
 
 
 -- Lower level mutations

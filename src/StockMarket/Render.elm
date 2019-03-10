@@ -3,7 +3,7 @@ module StockMarket.Render exposing (..)
 import Basics.Extra exposing (..)
 import Char
 import Css exposing (Style)
-import Dict
+import Dict exposing (Dict)
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attr
 import Html.Styled.Events as Events
@@ -11,6 +11,7 @@ import List
 import List.Extra as List
 import Maybe
 import Maybe.Extra as Maybe
+import Murmur3
 import Set
 import StockMarket as SM exposing (Action(..), Market)
 import String
@@ -22,15 +23,24 @@ import Util.Dict as Dict
 type alias RenderContext msg =
     { market : Market
     , actionMessage : Action -> msg
+    , getColor : String -> {primary : Css.Color, secondary : Css.Color}
     }
 
 
 renderSpreadsheet : (Action -> msg) -> Market -> Html msg
-renderSpreadsheet actionMessage market =
+renderSpreadsheet actionMessage ({playerOrder} as market) =
     let
+        colorMap = assignColors market
         ctx =
             { market = market
             , actionMessage = actionMessage
+            , getColor = (\name ->
+                              case Dict.get name colorMap of
+                                  Just c -> c
+                                  Nothing -> { primary = Css.hex "#ffffff"
+                                             , secondary = Css.hex "#8c8c8c"
+                                             }
+                         )
             }
     in
         [ playerInfo
@@ -79,7 +89,7 @@ spreadsheetContainer {market} =
 
 
 playerInfo : RenderContext msg -> List (Html msg)
-playerInfo { actionMessage, market } =
+playerInfo { actionMessage, market, getColor } =
     let
         { playerOrder, activePlayer, playerCash } = market
         infoCells =
@@ -88,7 +98,10 @@ playerInfo { actionMessage, market } =
                     (\player ->
                         [ gridCell player
                             "playerName"
-                            []
+                            [ getColor player
+                                  |> .primary
+                                  |> Css.backgroundColor
+                            ]
                             [ SetActivePlayer player
                                   |> actionMessage
                                   |> Events.onClick
@@ -99,7 +112,10 @@ playerInfo { actionMessage, market } =
                             ]
                         , gridCell player
                             "playerCash"
-                            []
+                            [ getColor player
+                                  |> .secondary
+                                  |> Css.backgroundColor
+                            ]
                             []
                             [ Dict.get player playerCash
                                 |> Maybe.withDefault 0
@@ -108,7 +124,10 @@ playerInfo { actionMessage, market } =
                             ]
                         , gridCell player
                             "certificates"
-                            []
+                            [ getColor player
+                                  |> .secondary
+                                  |> Css.backgroundColor
+                            ]
                             []
                             [ SM.playerCertificateCount market player
                                 |> String.fromInt
@@ -116,7 +135,10 @@ playerInfo { actionMessage, market } =
                             ]
                         , gridCell player
                             "playerStockValue"
-                            []
+                            [ getColor player
+                                  |> .secondary
+                                  |> Css.backgroundColor
+                            ]
                             []
                             [ SM.playerStockValue market player
                                 |> String.fromInt
@@ -124,7 +146,10 @@ playerInfo { actionMessage, market } =
                             ]
                         , gridCell player
                             "netWorth"
-                            []
+                            [ getColor player
+                                  |> .secondary
+                                  |> Css.backgroundColor
+                            ]
                             []
                             [ SM.playerNetWorth market player
                                 |> String.fromInt
@@ -153,7 +178,7 @@ playerInfo { actionMessage, market } =
 
 
 stockInfo : RenderContext msg -> List (Html msg)
-stockInfo { actionMessage, market } =
+stockInfo { actionMessage, market, getColor } =
     let
         { playerOrder, activePlayer, companyOrder, playerShares, presidents, bankShares, shareValues } = market
         activePlayerAction cont event =
@@ -166,7 +191,10 @@ stockInfo { actionMessage, market } =
                     (\company ->
                         [ gridCell "headings"
                             company
-                            []
+                            [ getColor company
+                                  |> .primary
+                                  |> Css.backgroundColor
+                            ]
                             []
                             [ Html.text company ]
                         , gridCell "bankShares"
@@ -226,7 +254,10 @@ stockInfo { actionMessage, market } =
                             (\player ->
                                 gridCell player
                                     company
-                                    []
+                                    [ getColor player
+                                          |> .secondary
+                                          |> Css.backgroundColor
+                                    ]
                                     ( if activePlayer == Just player
                                       then
                                           SellShareToBank player company
@@ -253,6 +284,39 @@ stockInfo { actionMessage, market } =
                     )
     in
     stockHeadings ++ companyInfo ++ playerShareInfo
+
+
+-- Styling
+
+
+assignColors : Market -> Dict String { primary : Css.Color
+                                     , secondary : Css.Color
+                                     }
+assignColors {playerOrder,companyOrder} =
+    let
+        sortedPlayers = List.sort playerOrder
+        sortedCompanies = List.sort companyOrder
+        seed = String.join "#" sortedPlayers
+                   |> Murmur3.hashString 42
+                   |> modBy 9989899
+                   |> toFloat
+                   |> (*) (360.0 / 9989899.0)
+        next x = x + (360 * 0.618033988749895)
+                     |> fractionalModBy 360
+    in
+        sortedPlayers ++ sortedCompanies
+            |> List.mapAccuml
+               (\hue name ->
+                    ( next hue
+                    , ( name
+                      , { primary = Css.hsl hue 0.9 0.65
+                        , secondary = Css.hsl hue 0.85 0.82
+                        }
+                      )
+                    )
+               ) seed
+            |> Tuple.second
+            |> Dict.fromList
 
 
 

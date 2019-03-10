@@ -30,12 +30,20 @@ suite =
                   \_ ->
                       emptyMarket 1000 5 8
                           |> addCompany "Grand Trunk" 50
-                          |> Expect.all [ .companyCash
+                          |> addCompany "NYC" 60
+                          |> Expect.all [ .companyOrder >> Expect.equal ["Grand Trunk", "NYC"]
+                                        , .companyCash
                                               >> Dict.get "Grand Trunk"
+                                              >> Expect.equal (Just 0)
+                                        , .companyCash
+                                              >> Dict.get "NYC"
                                               >> Expect.equal (Just 0)
                                         , .shareValues
                                               >> Dict.get "Grand Trunk"
                                               >> Expect.equal (Just 50)
+                                        , .shareValues
+                                              >> Dict.get "NYC"
+                                              >> Expect.equal (Just 60)
                                         ]
               ]
         , describe "Simple market example" <|
@@ -49,6 +57,7 @@ suite =
                 c3 = "B&O"
                 market =
                     { playerOrder = [ p1, p2, p3, p4 ]
+                    , companyOrder = [c1, c2, c3]
                     , playerCash =
                         Dict.fromList
                             [ ( p1, 100 )

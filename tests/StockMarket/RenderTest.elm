@@ -24,14 +24,14 @@ suite =
                                 [ Tree.singleton "middle1"
                                 , Tree.tree "middle2"
                                     [ Tree.singleton "bottom1"
-                                    , Tree.singleton "bottom2"
+                                    , Tree.singleton "bottom!"
                                     ]
                                 ]
                                 |> buildLineSpec
                                 |> Expect.equal [ "[begin-middle1 begin-top]"
                                                 , "[begin-bottom1 begin-middle2 end-middle1]"
-                                                , "[begin-bottom2 end-bottom1]"
-                                                , "[end-bottom2 end-middle2 end-top]"
+                                                , "[begin-bottom_ end-bottom1]"
+                                                , "[end-bottom_ end-middle2 end-top]"
                                                 ]
                     ]
               ]

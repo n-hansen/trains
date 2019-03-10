@@ -26,6 +26,7 @@ type alias CompanyName =
 
 type alias Market =
     { playerOrder : List PlayerName
+    , companyOrder : List CompanyName
     , playerCash : Dict PlayerName Int
     , playerShares : Dict PlayerName (Dict CompanyName Int)
     , presidents : Dict CompanyName PlayerName
@@ -42,6 +43,7 @@ type alias Market =
 emptyMarket : Int -> Int -> Int -> Market
 emptyMarket initialBank totalShares certificateLimit =
     { playerOrder = []
+    , companyOrder = []
     , playerCash = Dict.empty
     , playerShares = Dict.empty
     , presidents = Dict.empty
@@ -62,9 +64,10 @@ addPlayer player cash ({playerOrder, playerCash, bank} as market) =
     }
 
 addCompany : CompanyName -> Int -> Market -> Market
-addCompany company shareValue ({companyCash, shareValues} as market) =
+addCompany company shareValue ({companyOrder, companyCash, shareValues} as market) =
     { market
-        | shareValues = Dict.insert company shareValue shareValues
+        | companyOrder = companyOrder ++ [company]
+        , shareValues = Dict.insert company shareValue shareValues
         , companyCash = Dict.insert company 0 companyCash
     }
 

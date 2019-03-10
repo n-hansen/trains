@@ -149,6 +149,13 @@ companyShares { playerShares, bankShares, totalShares } company =
 
 
 -- Action API
+{-
+Reifying user actions into values akin to algebraic effects has two distinct advantages:
+  1. It allows us to log user-level actions to make traversing the state history easier.
+  2. It allows us to provide a simple interface for monadically chaining actions in a way
+     that plays nicely with the Elm architecture.
+ ~3. It allows us to build a functor out of user actions.~
+ -}
 
 
 type Action
@@ -175,7 +182,12 @@ tryAction action market =
 
 
 
--- Mutations
+-- Action functions
+{-
+These mutations should be in 1:1 correspondence with reified action values. In general, there
+should be very little error-checking at this level: by failing as far down the call stack as
+possible, we keep our top-level functions readable and minimize code duplication.
+ -}
 
 
 buyShareFromBank : PlayerName -> CompanyName -> Market -> Result String Market
@@ -219,6 +231,9 @@ sellShareToBank player company ({ shareValues } as market) =
                 |> Result.andThen (addBankShare company)
                 |> Result.andThen (creditPlayer player shareValue)
                 |> Result.andThen (debitBank shareValue)
+
+
+-- Lower level mutations
 
 
 addBankShare : CompanyName -> Market -> Result String Market

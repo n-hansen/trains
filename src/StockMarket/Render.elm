@@ -4,7 +4,7 @@ import Basics.Extra exposing (..)
 import Char
 import Css exposing (Style)
 import Dict
-import Html.Styled as Html exposing (Html)
+import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attr
 import Html.Styled.Events as Events
 import List
@@ -71,30 +71,40 @@ playerInfo ({ playerOrder, playerCash } as market) =
             playerOrder
                 |> List.concatMap
                     (\player ->
-                        [ Html.div
-                            [ Attr.css [ gridLocation player "playerName" ] ]
+                        [ gridCell player
+                            "playerName"
+                            []
+                            []
                             [ Html.text player ]
-                        , Html.div
-                            [ Attr.css [ gridLocation player "playerCash" ] ]
+                        , gridCell player
+                            "playerCash"
+                            []
+                            []
                             [ Dict.get player playerCash
                                 |> Maybe.withDefault 0
                                 |> String.fromInt
                                 |> Html.text
                             ]
-                        , Html.div
-                            [ Attr.css [ gridLocation player "certificates" ] ]
+                        , gridCell player
+                            "certificates"
+                            []
+                            []
                             [ SM.playerCertificateCount market player
                                 |> String.fromInt
                                 |> Html.text
                             ]
-                        , Html.div
-                            [ Attr.css [ gridLocation player "playerStockValue" ] ]
+                        , gridCell player
+                            "playerStockValue"
+                            []
+                            []
                             [ SM.playerStockValue market player
                                 |> String.fromInt
                                 |> Html.text
                             ]
-                        , Html.div
-                            [ Attr.css [ gridLocation player "netWorth" ] ]
+                        , gridCell player
+                            "netWorth"
+                            []
+                            []
                             [ SM.playerNetWorth market player
                                 |> String.fromInt
                                 |> Html.text
@@ -111,8 +121,10 @@ playerInfo ({ playerOrder, playerCash } as market) =
             ]
                 |> List.map
                     (\( colName, txt ) ->
-                        Html.div
-                            [ Attr.css [ gridLocation "headings" colName ] ]
+                        gridCell "headings"
+                            colName
+                            []
+                            []
                             [ Html.text txt ]
                     )
     in
@@ -126,24 +138,32 @@ stockInfo ({ playerOrder, companyOrder, playerShares, presidents, bankShares, sh
             companyOrder
                 |> List.concatMap
                     (\company ->
-                        [ Html.div
-                            [ Attr.css [ gridLocation "headings" company ] ]
+                        [ gridCell "headings"
+                            company
+                            []
+                            []
                             [ Html.text company ]
-                        , Html.div
-                            [ Attr.css [ gridLocation "bankShares" company ] ]
+                        , gridCell "bankShares"
+                            company
+                            []
+                            []
                             [ Dict.get company bankShares
                                 |> Maybe.withDefault 0
                                 |> String.fromInt
                                 |> Html.text
                             ]
-                        , Html.div
-                            [ Attr.css [ gridLocation "companyShares" company ] ]
+                        , gridCell "companyShares"
+                            company
+                            []
+                            []
                             [ SM.companyShares market company
                                 |> String.fromInt
                                 |> Html.text
                             ]
-                        , Html.div
-                            [ Attr.css [ gridLocation "stockPrice" company ] ]
+                        , gridCell "stockPrice"
+                            company
+                            []
+                            []
                             [ Dict.get company shareValues
                                 |> Maybe.withDefault 0
                                 |> String.fromInt
@@ -159,8 +179,10 @@ stockInfo ({ playerOrder, companyOrder, playerShares, presidents, bankShares, sh
             ]
                 |> List.map
                     (\( rowName, txt ) ->
-                        Html.div
-                            [ Attr.css [ gridLocation rowName "playerName" ] ]
+                        gridCell rowName
+                            "playerName"
+                            []
+                            []
                             [ Html.text txt ]
                     )
 
@@ -168,17 +190,27 @@ stockInfo ({ playerOrder, companyOrder, playerShares, presidents, bankShares, sh
             companyOrder
                 |> List.concatMap
                     (\company ->
-                        playerOrder
-                            |> List.map
-                                (\player ->
-                                    Html.div
-                                        [ Attr.css [ gridLocation player company ] ]
-                                        [ Dict.get2 player company playerShares
-                                            |> Maybe.map String.fromInt
-                                            |> Maybe.withDefault ""
-                                            |> Html.text
-                                        ]
-                                )
+                        List.map
+                            (\player ->
+                                gridCell player
+                                    company
+                                    []
+                                    []
+                                    [ Dict.get2 player company playerShares
+                                        |> Maybe.map String.fromInt
+                                        |> Maybe.map
+                                            (\cnt ->
+                                                if Dict.get company presidents == Just player then
+                                                    cnt ++ "*"
+
+                                                else
+                                                    cnt
+                                            )
+                                        |> Maybe.withDefault ""
+                                        |> Html.text
+                                    ]
+                            )
+                            playerOrder
                     )
     in
     stockHeadings ++ companyInfo ++ playerShareInfo
@@ -248,10 +280,9 @@ buildLineSpec =
 gridTemplate : Tree String -> Tree String -> Style
 gridTemplate rowSections colSections =
     let
+        -- TODO maybe don't use auto-spacing?
         lineSpecToAxisSpec =
             String.join " auto "
-
-        -- TODO maybe don't use auto-spacing?
     in
     Css.batch
         [ buildLineSpec rowSections
@@ -284,22 +315,24 @@ sectionEndLine =
     sanitizeSectionName >> (++) "end-"
 
 
-gridLocation : String -> String -> Style
-gridLocation row column =
-    let
-        colBegin =
-            sectionBeginLine column
-
-        colEnd =
-            sectionEndLine column
-
-        rowBegin =
-            sectionBeginLine row
-
-        rowEnd =
-            sectionEndLine row
-    in
-    Css.batch
-        [ Css.property "grid-row" (rowBegin ++ " / " ++ rowEnd)
-        , Css.property "grid-column" (colBegin ++ " / " ++ colEnd)
-        ]
+gridCell :
+    String
+    -> String
+    -> List Style
+    -> List (Attribute msg)
+    -> List (Html msg)
+    -> Html msg
+gridCell row col styles attrs children =
+    Html.div
+        (Attr.css
+            ([ Css.property "grid-row" (sectionBeginLine row ++ " / " ++ sectionEndLine row)
+             , Css.property "grid-column" (sectionBeginLine col ++ " / " ++ sectionEndLine col)
+             , Css.border3 (Css.px 1) Css.solid (Css.rgb 0 0 0)
+             , Css.margin4 (Css.px 0) (Css.px -1) (Css.px -1) (Css.px 0)
+             , Css.padding (Css.px 2)
+             ]
+                ++ styles
+            )
+            :: attrs
+        )
+        children

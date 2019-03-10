@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Debug
 import Html.Styled as Html exposing (Html)
 import Result
 import StockMarket as SM
@@ -20,16 +21,23 @@ init =
         |> SM.addPlayer "Bob" 300
         |> SM.addCompany "Grand Trunk" 25
         |> SM.addCompany "NYC" 40
-        |> SM.buyShareFromCompany "Alice" "Grand Trunk"
-        |> Result.andThen (SM.buyShareFromCompany "Alice" "Grand Trunk")
-        |> Result.andThen (SM.buyShareFromCompany "Alice" "Grand Trunk")
-        |> Result.andThen (SM.buyShareFromCompany "Bob" "Grand Trunk")
-        |> Result.andThen (SM.buyShareFromCompany "Bob" "NYC")
-        |> Result.andThen (SM.buyShareFromCompany "Bob" "NYC")
+        |> SM.tryAction (SM.Batch
+                             [ SM.BuyShareFromCompany "Alice" "Grand Trunk"
+                             , SM.BuyShareFromCompany "Alice" "Grand Trunk"
+                             , SM.BuyShareFromCompany "Bob" "Grand Trunk"
+                             ]
+                        )
         |> Result.withDefault (SM.emptyMarket 1000 5 8)
 
 
-view = SM.renderSpreadsheet
+type Message = SmAction SM.Action
 
 
-update msg model = model
+view = SM.renderSpreadsheet SmAction
+
+
+update (SmAction axn) model =
+    model
+        |> SM.tryAction axn
+        |> Result.mapError Debug.log
+        |> Result.withDefault model

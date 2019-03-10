@@ -11,25 +11,38 @@ import List
 import List.Extra as List
 import Maybe
 import Set
-import StockMarket as SM exposing (Market)
+import StockMarket as SM exposing (Action(..), Market)
 import String
 import Tree exposing (Tree)
 import Tuple
 import Util.Dict as Dict
 
 
-renderSpreadsheet : Market -> Html msg
-renderSpreadsheet market =
-    [ playerInfo
-    , stockInfo
-    ]
-        |> List.concatMap ((|>) market)
-        |> spreadsheetContainer market
+type alias RenderContext msg =
+    { market : Market
+    , actionMessage : Action -> msg
+    }
 
 
-spreadsheetContainer : Market -> List (Html msg) -> Html msg
-spreadsheetContainer { companyOrder, playerOrder } =
+renderSpreadsheet : (Action -> msg) -> Market -> Html msg
+renderSpreadsheet actionMessage market =
     let
+        ctx =
+            { market = market
+            , actionMessage = actionMessage
+            }
+    in
+        [ playerInfo
+        , stockInfo
+        ]
+        |> List.concatMap ((|>) ctx)
+        |> spreadsheetContainer ctx
+
+
+spreadsheetContainer : RenderContext msg -> List (Html msg) -> Html msg
+spreadsheetContainer {market} =
+    let
+        { companyOrder, playerOrder } = market
         columns =
             Tree.tree "sheet"
                 [ Tree.singleton "playerName"
@@ -64,9 +77,10 @@ spreadsheetContainer { companyOrder, playerOrder } =
     Html.div [ gridContainerStyle ]
 
 
-playerInfo : Market -> List (Html msg)
-playerInfo ({ playerOrder, playerCash } as market) =
+playerInfo : RenderContext msg -> List (Html msg)
+playerInfo { market } =
     let
+        { playerOrder, activePlayer, playerCash } = market
         infoCells =
             playerOrder
                 |> List.concatMap
@@ -75,7 +89,10 @@ playerInfo ({ playerOrder, playerCash } as market) =
                             "playerName"
                             []
                             []
-                            [ Html.text player ]
+                            [ Html.text <|
+                                  player ++
+                                  if Just player == activePlayer then "*" else ""
+                            ]
                         , gridCell player
                             "playerCash"
                             []
@@ -131,9 +148,10 @@ playerInfo ({ playerOrder, playerCash } as market) =
     headings ++ infoCells
 
 
-stockInfo : Market -> List (Html msg)
-stockInfo ({ playerOrder, companyOrder, playerShares, presidents, bankShares, shareValues } as market) =
+stockInfo : RenderContext msg -> List (Html msg)
+stockInfo { market } =
     let
+        { playerOrder, companyOrder, playerShares, presidents, bankShares, shareValues } = market
         companyInfo =
             companyOrder
                 |> List.concatMap

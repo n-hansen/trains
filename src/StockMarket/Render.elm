@@ -46,6 +46,7 @@ renderMarket ctx =
     Html.div
         [ Attr.css [ Css.displayFlex
                    , Css.flexDirection Css.column
+                   , Css.marginBottom <| Css.px 30
                    ]
         ]
         [ renderSpreadsheet ctx

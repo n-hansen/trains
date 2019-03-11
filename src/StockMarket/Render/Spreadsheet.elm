@@ -64,6 +64,7 @@ spreadsheetContainer {market} =
                 [ gridDisplay
                 , gridTemplate rows columns
                 , Css.cursor Css.pointer
+                , Css.marginBottom <| Css.px 30
                 ]
     in
     Html.div [ gridContainerStyle ]

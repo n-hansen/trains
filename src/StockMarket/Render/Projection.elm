@@ -24,7 +24,10 @@ renderProjectionArea ({projectionInput} as ctx) =
     [ Just <| projectionInputForm ctx
     , projectionInput
         |> buildProjection
-        |> Maybe.map (renderProjectionChart ctx)
+        |> Maybe.map (networthChart ctx)
+    , projectionInput
+        |> buildProjection
+        |> Maybe.map (relativeNetworthChart ctx)
     ]
     |> Maybe.values
     |> Html.div
@@ -39,8 +42,8 @@ renderProjectionArea ({projectionInput} as ctx) =
 -- View components
 
 
-renderProjectionChart : RenderContext msg -> Projection -> Html msg
-renderProjectionChart { market, getColor } projection =
+networthChart : RenderContext msg -> Projection -> Html msg
+networthChart { market, getColor } projection =
     let
         markets = SM.runProjection projection market
         dataseries player =
@@ -59,7 +62,55 @@ renderProjectionChart { market, getColor } projection =
                 |> LineChart.view Tuple.first Tuple.second
 
     in
-        Svg.fromUnstyled chart
+        chartContainer "Absolute Networth" <| Svg.fromUnstyled chart
+
+
+relativeNetworthChart : RenderContext msg -> Projection -> Html msg
+relativeNetworthChart { market, getColor } projection =
+    let
+        markets = SM.runProjection projection market
+        dataseries player =
+            List.indexedMap
+                (\ix m -> (toFloat ix, SM.playerNetWorth m player |> toFloat))
+                markets
+        baselines =
+            market.playerOrder
+                |> List.map dataseries
+                |> List.transpose
+                |> List.map (List.map Tuple.second
+                                 >> List.sum
+                                 >> \x -> x / toFloat (List.length market.playerOrder))
+        normalizedDataseries player =
+            dataseries player
+                |> List.map2 (\avgNw (ix,nw) -> (ix,nw-avgNw)) baselines
+        chart =
+            market.playerOrder
+                |> List.map (\player ->
+                                 LineChart.line
+                                 (getColor player |> .primary)
+                                 Dots.circle
+                                 player
+                                 (normalizedDataseries player)
+                            )
+                |> LineChart.view Tuple.first Tuple.second
+
+    in
+        chartContainer "Relative Networth" <| Svg.fromUnstyled chart
+
+
+chartContainer : String -> Html msg -> Html msg
+chartContainer title chart =
+    Html.div
+        [ Attr.css [ Css.displayFlex
+                   , Css.flexDirection Css.column
+                   , Css.alignItems Css.center
+                   ]
+        ]
+        [ Html.div
+              [ Attr.css [ Css.fontSize Css.large ] ]
+              [ Html.text title ]
+        , chart
+        ]
 
 
 projectionInputForm : RenderContext msg -> Html msg
@@ -86,6 +137,7 @@ projectionInputForm { market, projectionInput, updateProjectionInput } =
         |> (++) [ Html.div
                       [ Attr.css [ Css.alignSelf Css.center
                                  , Css.fontSize Css.large
+                                 , Css.marginBottom <| Css.px 5
                                  ]
                       ]
                       [ Html.text "Operating round projections:"]

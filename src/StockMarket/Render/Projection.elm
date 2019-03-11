@@ -128,6 +128,8 @@ buildCompanyProjection (company, input) =
                     |. Parser.symbol ">"
                 , Parser.succeed (MoveShareValueLeft company)
                     |. Parser.symbol "<"
+                , Parser.succeed (PayDividend company)
+                    |= Parser.int
                 ]
 
         roundSeparator = Parser.symbol ","

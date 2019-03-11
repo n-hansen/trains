@@ -42,6 +42,11 @@ suite =
                                                         ]
                                                       ]
                                                 )
+                    , test "test 5" <|
+                        \_ ->
+                            ("NYC","120")
+                                |> buildCompanyProjection
+                                |> Expect.equal (Just [[PayDividend "NYC" 120]])
                     ]
               , describe "buildProjection"
                   [ test "test 1" <|

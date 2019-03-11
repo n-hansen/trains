@@ -348,6 +348,33 @@ suite =
                                          )
                             |> Expect.err
                 ]
+            , describe "PayDividend"
+                [ test "test 1" <|
+                    \_ ->
+                        market
+                            |> tryAction (PayDividend c2 30)
+                            |> Expect.all [ Result.map (.playerCash >> Dict.get p1)
+                                                >> Expect.equal (Ok (Just 103))
+                                          , Result.map (.playerCash >> Dict.get p2)
+                                                >> Expect.equal (Ok (Just 212))
+                                          , Result.map (.playerCash >> Dict.get p3)
+                                                >> Expect.equal (Ok (Just 500))
+                                          , Result.map (.companyCash >> Dict.get c2)
+                                                >> Expect.equal (Ok (Just 156))
+                                          , Result.map .bank >> Expect.equal (Ok 979)
+                                          ]
+                ]
+            , describe "Batch"
+                [ test "batch order" <|
+                    \_ ->
+                        market
+                            |> tryAction ( Batch [ PayDividend c2 30
+                                                 , MoveShareValueRight c2
+                                                 ]
+                                         )
+                            |> Result.map .bank
+                            |> Expect.equal (Ok 979)
+                ]
             , describe "market projection"
                 [ test "runProjection" <|
                     \_ ->

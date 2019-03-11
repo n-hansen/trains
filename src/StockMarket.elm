@@ -223,6 +223,7 @@ type Action
     | BuyShareFromCompany PlayerName CompanyName
     | MoveShareValueRight CompanyName
     | MoveShareValueLeft CompanyName
+    | PayDividend CompanyName Int
     | SellShareToBank PlayerName CompanyName
     | SetActivePlayer PlayerName
 
@@ -250,6 +251,9 @@ tryAction action market =
 
         MoveShareValueLeft c ->
             moveShareValueLeft c market
+
+        PayDividend c x ->
+            payDividend c x market
 
 
 -- Action functions
@@ -355,6 +359,37 @@ moveShareValueLeft company ({ shareValues } as market) =
                              )
                 |> Result.fromMaybe ("Leftward track movement failed for company " ++ company ++ ".")
 
+
+payDividend : CompanyName -> Int -> Market -> Result String Market
+payDividend company amount ({playerShares} as market) =
+    if modBy 10 amount /= 0
+    then
+        Err "Dividends must be paid in multiples of 10."
+
+    else
+        let
+            perShare = amount // 10
+            playerTransactions =
+                playerShares
+                    |> Dict.toList
+                    |> List.map (\(player,shares) ->
+                                     Dict.get company shares
+                                         |> Maybe.map (Tuple.pair player)
+                                )
+                    |> Maybe.values
+                    |> List.concatMap (\(player,shareCount) ->
+                                           [ creditPlayer player (shareCount * perShare)
+                                           , debitBank (shareCount * perShare)
+                                           ]
+                                      )
+            companyAmount = companyShares market company * perShare
+            companyTransaction =
+                [ creditCompany company companyAmount
+                , debitBank companyAmount
+                ]
+        in
+            playerTransactions ++ companyTransaction
+                |> List.foldl Result.andThen (Ok market)
 
 
 -- Lower level mutations

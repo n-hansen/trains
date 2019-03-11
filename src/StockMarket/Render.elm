@@ -1,6 +1,7 @@
 module StockMarket.Render exposing (..)
 
 import Basics.Extra as Basics
+import Color
 import Css exposing (Style)
 import Dict exposing (Dict)
 import Html.Styled as Html exposing (Attribute, Html)
@@ -12,7 +13,9 @@ import Murmur3
 import StockMarket exposing (Action, Market, Projection)
 import StockMarket.Render.Types exposing (..)
 import StockMarket.Render.Spreadsheet exposing (..)
+import StockMarket.Render.Projection exposing (..)
 import String
+import Util.Color as Color
 
 
 createRenderContext : (Action -> msg)
@@ -31,8 +34,8 @@ createRenderContext actionMessage updateProjection market projection =
         , getColor = (\name ->
                           case Dict.get name colorMap of
                               Just c -> c
-                              Nothing -> { primary = Css.hex "#ffffff"
-                                         , secondary = Css.hex "#8c8c8c"
+                              Nothing -> { primary = Color.grey
+                                         , secondary = Color.white
                                          }
                      )
         }
@@ -46,33 +49,36 @@ renderMarket ctx =
                    ]
         ]
         [ renderSpreadsheet ctx
+        , renderProjection ctx
         ]
 
 
-assignColors : Market -> Dict String { primary : Css.Color
-                                     , secondary : Css.Color
+assignColors : Market -> Dict String { primary : Color.Color
+                                     , secondary : Color.Color
                                      }
 assignColors {playerOrder,companyOrder} =
     let
+        rotation = 0.618033988749895
         sortedPlayers = List.sort playerOrder
         sortedCompanies = List.sort companyOrder
-        seed = String.join "#" sortedPlayers
-                   |> Murmur3.hashString 42
-                   |> modBy 9989899
-                   |> toFloat
-                   |> (*) (360.0 / 9989899.0)
-        next x = x + (360 * 0.618033988749895)
-                     |> Basics.fractionalModBy 360
+        seedHue = String.join "#" sortedPlayers
+                      |> Murmur3.hashString 42
+                      |> modBy 9989899
+                      |> toFloat
+                      |> \x -> x / 9989899.0
+        seed = { primary = Color.hsl seedHue 0.9 0.65
+               , secondary = Color.hsl seedHue 0.85 0.82
+               }
+        next {primary,secondary} =
+            { primary = Color.rotateBy rotation primary
+            , secondary = Color.rotateBy rotation secondary
+            }
     in
         sortedPlayers ++ sortedCompanies
             |> List.mapAccuml
-               (\hue name ->
-                    ( next hue
-                    , ( name
-                      , { primary = Css.hsl hue 0.9 0.65
-                        , secondary = Css.hsl hue 0.85 0.82
-                        }
-                      )
+               (\c name ->
+                    ( next c
+                    , (name , c)
                     )
                ) seed
             |> Tuple.second

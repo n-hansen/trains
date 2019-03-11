@@ -4,7 +4,7 @@ import Browser
 import Debug
 import Html.Styled as Html exposing (Html)
 import Result
-import StockMarket as SM
+import StockMarket as SM exposing (Action(..))
 import StockMarket.Render as SM
 
 
@@ -24,7 +24,7 @@ type alias Model =
 init : Model
 init =
     let
-        emptyMarket = SM.emptyMarket (SM.linearShareValueTrack [0,10,25,40,50]) 1000 5 8
+        emptyMarket = SM.emptyMarket (SM.linearShareValueTrack [0,10,25,40,50,60,75]) 1000 5 8
         market =
             emptyMarket
                 |> SM.addPlayer "Alice" 200
@@ -34,11 +34,22 @@ init =
                 |> SM.tryAction (SM.Batch
                                      [ SM.BuyShareFromCompany "Alice" "Grand Trunk"
                                      , SM.BuyShareFromCompany "Alice" "Grand Trunk"
-                                     , SM.BuyShareFromCompany "Bob" "Grand Trunk"
+                                     , SM.BuyShareFromCompany "Bob" "NYC"
+                                     , SM.BuyShareFromCompany "Bob" "NYC"
                                      ]
                                 )
                 |> Result.withDefault emptyMarket
-        projection = []
+        projection = [ [ MoveShareValueRight "NYC"
+                       , MoveShareValueRight "Grand Trunk"
+                       ]
+                     , [ MoveShareValueRight "NYC"
+                       , MoveShareValueRight "Grand Trunk"
+                       , MoveShareValueRight "Grand Trunk"
+                       ]
+                     , [ MoveShareValueRight "NYC"
+                       , MoveShareValueLeft "Grand Trunk"
+                       ]
+                     ]
     in
         { market = market
         , projection = projection

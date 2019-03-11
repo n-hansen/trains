@@ -1,6 +1,6 @@
 module StockMarket.Render.Types exposing (..)
 
-import Css
+import Color
 import StockMarket exposing (..)
 
 
@@ -9,5 +9,5 @@ type alias RenderContext msg =
     , projection : Projection
     , actionMessage : Action -> msg
     , updateProjection : Projection -> msg
-    , getColor : String -> { primary : Css.Color, secondary : Css.Color }
+    , getColor : String -> { primary : Color.Color, secondary : Color.Color }
     }

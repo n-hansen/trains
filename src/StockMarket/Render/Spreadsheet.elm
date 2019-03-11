@@ -17,6 +17,7 @@ import StockMarket.Render.Types exposing (..)
 import String
 import Tree exposing (Tree)
 import Tuple
+import Util.Color as Color
 import Util.Dict as Dict
 
 
@@ -76,66 +77,62 @@ playerInfo { actionMessage, market, getColor } =
             playerOrder
                 |> List.concatMap
                     (\player ->
-                        [ gridCell player
-                            "playerName"
-                            [ getColor player
-                                  |> .primary
-                                  |> Css.backgroundColor
-                            ]
-                            [ SetActivePlayer player
-                                  |> actionMessage
-                                  |> Events.onClick
-                            ]
-                            [ Html.text <|
-                                  player ++
-                                  if Just player == activePlayer then "*" else ""
-                            ]
-                        , gridCell player
-                            "playerCash"
-                            [ getColor player
-                                  |> .secondary
-                                  |> Css.backgroundColor
-                            ]
-                            []
-                            [ Dict.get player playerCash
-                                |> Maybe.withDefault 0
-                                |> String.fromInt
-                                |> Html.text
-                            ]
-                        , gridCell player
-                            "certificates"
-                            [ getColor player
-                                  |> .secondary
-                                  |> Css.backgroundColor
-                            ]
-                            []
-                            [ SM.playerCertificateCount market player
-                                |> String.fromInt
-                                |> Html.text
-                            ]
-                        , gridCell player
-                            "playerStockValue"
-                            [ getColor player
-                                  |> .secondary
-                                  |> Css.backgroundColor
-                            ]
-                            []
-                            [ SM.playerStockValue market player
-                                |> String.fromInt
-                                |> Html.text
-                            ]
-                        , gridCell player
-                            "netWorth"
-                            [ getColor player
-                                  |> .secondary
-                                  |> Css.backgroundColor
-                            ]
-                            []
-                            [ SM.playerNetWorth market player
-                                |> String.fromInt
-                                |> Html.text
-                            ]
-                        ]
+                         let primaryBackground =
+                                 getColor player
+                                     |> .primary
+                                     |> Color.toCssColor
+                                     |> Css.backgroundColor
+                             secondaryBackground =
+                                 getColor player
+                                     |> .secondary
+                                     |> Color.toCssColor
+                                     |> Css.backgroundColor
+                         in
+                             [ gridCell player
+                                 "playerName"
+                                 [ primaryBackground ]
+                                 [ SetActivePlayer player
+                                       |> actionMessage
+                                       |> Events.onClick
+                                 ]
+                                 [ Html.text <|
+                                       player ++
+                                       if Just player == activePlayer then "*" else ""
+                                 ]
+                             , gridCell player
+                                 "playerCash"
+                                 [ secondaryBackground ]
+                                 []
+                                 [ Dict.get player playerCash
+                                     |> Maybe.withDefault 0
+                                     |> String.fromInt
+                                     |> Html.text
+                                 ]
+                             , gridCell player
+                                 "certificates"
+                                 [ secondaryBackground ]
+                                 []
+                                 [ SM.playerCertificateCount market player
+                                     |> String.fromInt
+                                     |> Html.text
+                                 ]
+                             , gridCell player
+                                 "playerStockValue"
+                                 [ secondaryBackground ]
+                                 []
+                                 [ SM.playerStockValue market player
+                                     |> String.fromInt
+                                     |> Html.text
+                                 ]
+                             , gridCell player
+                                 "netWorth"
+                                 [ secondaryBackground ]
+                                 []
+                                 [ SM.playerNetWorth market player
+                                     |> String.fromInt
+                                     |> Html.text
+                                 ]
+                             ]
                     )
 
         headings =
@@ -173,6 +170,7 @@ stockInfo { actionMessage, market, getColor } =
                             company
                             [ getColor company
                                   |> .primary
+                                  |> Color.toCssColor
                                   |> Css.backgroundColor
                             ]
                             []
@@ -255,6 +253,7 @@ stockInfo { actionMessage, market, getColor } =
                                     company
                                     [ getColor player
                                           |> .secondary
+                                          |> Color.toCssColor
                                           |> Css.backgroundColor
                                     ]
                                     ( if activePlayer == Just player

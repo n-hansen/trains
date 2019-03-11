@@ -13414,9 +13414,6 @@ var author$project$StockMarket$Render$Projection$renderProjectionArea = function
 					author$project$StockMarket$Render$Projection$buildProjection(projectionInput))
 				])));
 };
-var author$project$StockMarket$SetActivePlayer = function (a) {
-	return {$: 7, a: a};
-};
 var elm$core$String$map = _String_map;
 var author$project$StockMarket$Render$Spreadsheet$sanitizeSectionName = elm$core$String$map(
 	function (c) {
@@ -13514,6 +13511,41 @@ var author$project$StockMarket$Render$Spreadsheet$gridCell = F5(
 				attrs),
 			children);
 	});
+var rtfeldman$elm_css$Css$borderWidth = rtfeldman$elm_css$Css$prop1('border-width');
+var rtfeldman$elm_css$Css$padding4 = rtfeldman$elm_css$Css$prop4('padding');
+var rtfeldman$elm_css$Css$small = {y: 0, O: 'small'};
+var rtfeldman$elm_css$Css$width = rtfeldman$elm_css$Css$prop1('width');
+var author$project$StockMarket$Render$Spreadsheet$instructions = function (_n0) {
+	return _List_fromArray(
+		[
+			A5(
+			author$project$StockMarket$Render$Spreadsheet$gridCell,
+			'stockInfo',
+			'playerInfo',
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Css$width(
+					rtfeldman$elm_css$Css$px(320)),
+					rtfeldman$elm_css$Css$fontSize(rtfeldman$elm_css$Css$small),
+					A4(
+					rtfeldman$elm_css$Css$padding4,
+					rtfeldman$elm_css$Css$px(8),
+					rtfeldman$elm_css$Css$px(0),
+					rtfeldman$elm_css$Css$px(2),
+					rtfeldman$elm_css$Css$px(15)),
+					rtfeldman$elm_css$Css$borderWidth(
+					rtfeldman$elm_css$Css$px(0))
+				]),
+			_List_Nil,
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$text('Buy shares for the active player (*) by clicking on the market and treasury cells. Sell shares by clicking on cells in that player\'s row.')
+				]))
+		]);
+};
+var author$project$StockMarket$SetActivePlayer = function (a) {
+	return {$: 7, a: a};
+};
 var avh4$elm_color$Color$toRgba = function (_n0) {
 	var r = _n0.a;
 	var g = _n0.b;
@@ -14244,7 +14276,7 @@ var author$project$StockMarket$Render$Spreadsheet$renderSpreadsheet = function (
 			elm$core$List$concatMap,
 			elm$core$Basics$apR(ctx),
 			_List_fromArray(
-				[author$project$StockMarket$Render$Spreadsheet$playerInfo, author$project$StockMarket$Render$Spreadsheet$stockInfo])));
+				[author$project$StockMarket$Render$Spreadsheet$playerInfo, author$project$StockMarket$Render$Spreadsheet$stockInfo, author$project$StockMarket$Render$Spreadsheet$instructions])));
 };
 var author$project$StockMarket$Render$renderMarket = function (ctx) {
 	return A2(

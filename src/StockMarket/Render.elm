@@ -19,18 +19,18 @@ import Util.Color as Color
 
 
 createRenderContext : (Action -> msg)
-                    -> (Projection -> msg)
+                    -> (ProjectionInput -> msg)
                     -> Market
-                    -> Projection
+                    -> ProjectionInput
                     -> RenderContext msg
-createRenderContext actionMessage updateProjection market projection =
+createRenderContext actionMessage updateProjectionInput market projectionInput =
     let
         colorMap = assignColors market
     in
         { market = market
-        , projection = projection
+        , projectionInput = projectionInput
         , actionMessage = actionMessage
-        , updateProjection = updateProjection
+        , updateProjectionInput = updateProjectionInput
         , getColor = (\name ->
                           case Dict.get name colorMap of
                               Just c -> c

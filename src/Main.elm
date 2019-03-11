@@ -2,10 +2,12 @@ module Main exposing (main)
 
 import Browser
 import Debug
+import Dict
 import Html.Styled as Html exposing (Html)
 import Result
 import StockMarket as SM exposing (Action(..))
 import StockMarket.Render as SM
+import StockMarket.Render.Types as SM
 
 
 main =
@@ -17,7 +19,7 @@ main =
 
 type alias Model =
     { market : SM.Market
-    , projection : SM.Projection
+    , projectionInput : SM.ProjectionInput
     }
 
 
@@ -39,33 +41,23 @@ init =
                                      ]
                                 )
                 |> Result.withDefault emptyMarket
-        projection = [ [ MoveShareValueRight "NYC"
-                       , MoveShareValueRight "Grand Trunk"
-                       ]
-                     , [ MoveShareValueRight "NYC"
-                       , MoveShareValueRight "Grand Trunk"
-                       , MoveShareValueRight "Grand Trunk"
-                       ]
-                     , [ MoveShareValueRight "NYC"
-                       , MoveShareValueLeft "Grand Trunk"
-                       ]
-                     ]
+        projectionInput = Dict.empty
     in
         { market = market
-        , projection = projection
+        , projectionInput = projectionInput
         }
 
 
 type Message = MarketAction SM.Action
-             | UpdateProjection SM.Projection
+             | UpdateProjection SM.ProjectionInput
 
 
-view {market, projection} =
+view {market, projectionInput} =
     SM.createRenderContext
         MarketAction
         UpdateProjection
         market
-        projection
+        projectionInput
         |> SM.renderMarket
 
 
@@ -80,5 +72,5 @@ update message model =
 
         UpdateProjection proj ->
             { model
-                | projection = proj
+                | projectionInput = proj
             }

@@ -49,7 +49,7 @@ renderMarket ctx =
                    ]
         ]
         [ renderSpreadsheet ctx
-        , renderProjection ctx
+        , renderProjectionArea ctx
         ]
 
 

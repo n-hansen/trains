@@ -1,5 +1,6 @@
 module StockMarket.Render.Projection exposing (..)
 
+import Css
 import Dict
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attr
@@ -16,6 +17,26 @@ import StockMarket as SM exposing (Action(..), CompanyName, Market, PlayerName, 
 import StockMarket.Render.Types exposing (..)
 import Svg.Styled as Svg
 import Tuple
+
+
+renderProjectionArea : RenderContext msg -> Html msg
+renderProjectionArea ({projectionInput} as ctx) =
+    [ Just <| projectionInputForm ctx
+    , projectionInput
+        |> buildProjection
+        |> Maybe.map (renderProjectionChart ctx)
+    ]
+    |> Maybe.values
+    |> Html.div
+       [ Attr.css [ Css.displayFlex
+                  , Css.flexDirection Css.row
+                  , Css.alignItems Css.flexStart
+                  ]
+       ]
+
+
+
+-- View components
 
 
 renderProjectionChart : RenderContext msg -> Projection -> Html msg
@@ -39,6 +60,46 @@ renderProjectionChart { market, getColor } projection =
 
     in
         Svg.fromUnstyled chart
+
+
+projectionInputForm : RenderContext msg -> Html msg
+projectionInputForm { market, projectionInput, updateProjectionInput } =
+    market.companyOrder
+        |> List.map
+           ( \company ->
+                 Html.div
+                 []
+                 [ Html.span
+                       []
+                       [ Html.text <| company ++ ": "
+                       ]
+                 , Html.input
+                     [ Dict.get company projectionInput
+                           |> Maybe.withDefault ""
+                           |> Attr.value
+                     , Events.onInput
+                         <| \i -> updateProjectionInput (Dict.insert company i projectionInput)
+                     ]
+                     []
+                 ]
+           )
+        |> (++) [ Html.div
+                      [ Attr.css [ Css.alignSelf Css.center
+                                 , Css.fontSize Css.large
+                                 ]
+                      ]
+                      [ Html.text "Operating round projections:"]
+                ]
+        |> Html.div
+           [Attr.css [ Css.displayFlex
+                     , Css.flexDirection Css.column
+                     , Css.alignItems Css.flexEnd
+                     ]
+           ]
+
+
+
+-- Input parsing
 
 
 buildCompanyProjection : (CompanyName, String) -> Maybe Projection

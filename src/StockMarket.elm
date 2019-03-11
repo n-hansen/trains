@@ -200,7 +200,7 @@ runProjection projection market =
         runRound : List Action -> Market -> Market
         runRound =
             flip <|
-                List.foldl (\a m -> tryAction a m |> Result.withDefault market)
+                List.foldl (\a m -> tryAction a m |> Result.withDefault m)
     in
         List.scanl runRound market projection
 

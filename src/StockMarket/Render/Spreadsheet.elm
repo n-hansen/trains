@@ -25,6 +25,7 @@ renderSpreadsheet : RenderContext msg -> Html msg
 renderSpreadsheet ctx =
     [ playerInfo
     , stockInfo
+    , instructions
     ]
     |> List.concatMap ((|>) ctx)
     |> spreadsheetContainer ctx
@@ -67,7 +68,33 @@ spreadsheetContainer {market} =
                 , Css.marginBottom <| Css.px 30
                 ]
     in
-    Html.div [ gridContainerStyle ]
+        Html.div [ gridContainerStyle ]
+
+
+instructions : a -> List (Html msg)
+instructions _ =
+    [ gridCell "stockInfo" "playerInfo"
+          [ Css.width <| Css.px 320
+          , Css.fontSize Css.small
+          , Css.padding4 (Css.px 8) (Css.px 0) (Css.px 2) (Css.px 15)
+          , Css.borderWidth <| Css.px 0
+          ]
+          []
+          [ Html.text <|
+                "Buy shares for the active player (*) by clicking on the market and treasury cells. Sell shares by clicking on cells in that player's row."
+          ]
+    ]
+    -- [Html.div
+    --      [ Attr.css  [ Css.property "grid-row" (sectionBeginLine "companyShares" ++ " / " ++ sectionEndLine "sheet")
+    --                  , Css.property "grid-column" (sectionBeginLine "playerCash"  ++ " / " ++ sectionEndLine "sheet")
+    --                  , Css.width <| Css.px 200
+    --                  , Css.fontSize Css.small
+    --                  ]
+    --      ]
+    --      [ Html.text <| "Buy shares for the active player (*) by clicking on the market and treasury cells. Sell shares by clicking on cells in that player's row."
+
+    --      ]
+    -- ]
 
 
 playerInfo : RenderContext msg -> List (Html msg)

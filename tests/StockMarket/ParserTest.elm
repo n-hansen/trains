@@ -68,6 +68,17 @@ suite =
                                                ,("alice","C&O",3)
                                                ]
                           }
+              , test "playerParser 6" <|
+                  \_ ->
+                      checkParse
+                          ["player: alice $200, B&O*=2"]
+                          { blankState
+                                | playerOrder = ["alice"]
+                                , playerCash = [("alice",200)]
+                                , playerShares = [("alice","B&O",2)]
+                                , presidents = [("B&O","alice")]
+                          }
+
               , test "companyParser 1" <|
                   \_ ->
                       checkParse
@@ -108,7 +119,23 @@ suite =
                                                ]
                               , bankShares = [("C&O",1)]
                           }
-
+              , test "companyParser 5" <|
+                  \_ ->
+                      checkParse
+                          ["company: C&O $100, alice* = 2"]
+                          { blankState
+                              | companyOrder = ["C&O"]
+                              , shareValues = [("C&O",100)]
+                              , playerShares = [("alice","C&O",2)]
+                              , presidents = [("C&O","alice")]
+                          }
+              , test "certificateCountParser" <|
+                  \_ ->
+                      checkParse
+                          ["certificates: 10"]
+                          { blankState
+                              | certificateLimit = Just 10
+                          }
               ]
         ]
 

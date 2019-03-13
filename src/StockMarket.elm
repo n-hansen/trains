@@ -7,6 +7,7 @@ module StockMarket exposing
     , ShareValueTrack(..)
     , addCompany
     , addPlayer
+    , insertCompanyShareValue
     , linearShareValueTrack
     , companyShareValue
     , companyShares

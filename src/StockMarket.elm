@@ -1,8 +1,8 @@
 module StockMarket exposing
     ( Action(..)
-    , CompanyName
+    , CompanyName(..)
     , Market
-    , PlayerName
+    , PlayerName(..)
     , Projection
     , ShareValueTrack(..)
     , addCompany
@@ -20,7 +20,7 @@ module StockMarket exposing
     )
 
 import Basics.Extra exposing (..)
-import Dict exposing (Dict)
+import AssocList as Dict exposing (Dict)
 import List
 import List.Extra as List
 import List.Zipper as Zipper
@@ -29,7 +29,6 @@ import Maybe.Extra as Maybe
 import Result
 import Result.Extra as Result
 import Tuple
-import Util.Dict as Dict
 import Util.List as List
 import Util.Result as Result
 
@@ -62,7 +61,7 @@ type alias Market =
     , activePlayer : Maybe PlayerName
     , companyOrder : List CompanyName
     , playerCash : Dict PlayerName Int
-    , playerShares : Dict PlayerName (Dict CompanyName Int)
+    , playerShares : Dict (PlayerName,CompanyName) Int
     , presidents : Dict CompanyName PlayerName
     , bankShares : Dict CompanyName Int
     , companyCash : Dict CompanyName Int
@@ -139,35 +138,28 @@ insertCompanyShareValue company value shareValues =
 
 playerCertificateCount : Market -> PlayerName -> Int
 playerCertificateCount { presidents, playerShares } player =
-    Dict.get player playerShares
-        |> Maybe.map
-            (Dict.values
-                >> List.sum
-                >> (\shareCount ->
-                        shareCount
-                            - (Dict.values presidents
-                                |> List.filter (\p -> p == player)
-                                |> List.length
-                              )
-                   )
-            )
-        |> Maybe.withDefault 0
+    playerShares
+        |> Dict.foldl
+           (\(p,c) s acc ->
+                if p == player
+                then if Dict.get c presidents == Just player
+                     then acc + s - 1
+                     else acc + s
+                else acc
+           ) 0
 
 
 playerStockValue : Market -> PlayerName -> Int
 playerStockValue ({ playerShares } as market) player =
-    Dict.get player playerShares
-        |> Maybe.map
-            (Dict.toList
-                >> List.map
-                    (\( company, shares ) ->
-                        companyShareValue market company
-                            |> Maybe.map (\val -> val * shares)
-                            |> Maybe.withDefault 0
-                    )
-                >> List.sum
-            )
-        |> Maybe.withDefault 0
+    playerShares
+        |> Dict.foldl
+           (\(p,c) s acc ->
+                companyShareValue market c
+                    |> Maybe.withDefault 0
+                    |> (*) s
+                    |> (+) acc
+           ) 0
+
 
 
 playerNetWorth : Market -> PlayerName -> Int
@@ -182,10 +174,9 @@ companyShares : Market -> CompanyName -> Int
 companyShares { playerShares, bankShares, totalShares } company =
     totalShares
         - (Dict.get company bankShares |> Maybe.withDefault 0)
-        - (Dict.values playerShares
-            |> List.concatMap Dict.toList
-            |> List.filter (\( c, _ ) -> company == c)
-            |> List.map Tuple.second
+        - (playerShares
+            |> Dict.filter (\(_,c) _ -> c == company)
+            |> Dict.values
             |> List.sum
           )
 
@@ -273,7 +264,7 @@ buyShareFromBank : PlayerName -> CompanyName -> Market -> Result String Market
 buyShareFromBank player company market =
     case companyShareValue market company of
         Nothing ->
-            Err <| "No share value for company " ++ company ++ "."
+            Err <| "No share value for company " ++ cName company ++ "."
 
         Just shareValue ->
             market
@@ -287,13 +278,13 @@ buyShareFromCompany : PlayerName -> CompanyName -> Market -> Result String Marke
 buyShareFromCompany player company market =
     case companyShareValue market company of
         Nothing ->
-            Err <| "No share value for company " ++ company ++ "."
+            Err <| "No share value for company " ++ cName company ++ "."
 
         Just shareValue ->
             market
                 |> addPlayerShare player company
                 |> Result.guard (\m -> companyShares m company >= 0)
-                    ("No shares held by company " ++ company ++ ".")
+                    ("No shares held by company " ++ cName company ++ ".")
                 |> Result.andThen (debitPlayer player shareValue)
                 |> Result.andThen (creditCompany company shareValue)
 
@@ -302,7 +293,7 @@ sellShareToBank : PlayerName -> CompanyName -> Market -> Result String Market
 sellShareToBank player company market =
     case companyShareValue market company of
         Nothing ->
-            Err <| "No share value for company " ++ company ++ "."
+            Err <| "No share value for company " ++ cName company ++ "."
 
         Just shareValue ->
             market
@@ -316,7 +307,7 @@ setActivePlayer : PlayerName -> Market -> Result String Market
 setActivePlayer player ({ playerOrder, activePlayer } as market) =
     if List.member player playerOrder
     then Ok {market | activePlayer = Just player}
-    else Err <| "Player " ++ player ++ " doesn't appear to exist."
+    else Err <| "Player " ++ pName player ++ " doesn't appear to exist."
 
 
 moveShareValueRight : CompanyName -> Market -> Result String Market
@@ -339,7 +330,7 @@ moveShareValueRight company ({ shareValues } as market) =
                                   >> LinearTrack
                                   >> (\sv -> { market | shareValues = sv })
                              )
-                |> Result.fromMaybe ("Rightward track movement failed for company " ++ company ++ ".")
+                |> Result.fromMaybe ("Rightward track movement failed for company " ++ cName company ++ ".")
 
 
 moveShareValueLeft : CompanyName -> Market -> Result String Market
@@ -362,7 +353,7 @@ moveShareValueLeft company ({ shareValues } as market) =
                                   >> LinearTrack
                                   >> (\sv -> { market | shareValues = sv })
                              )
-                |> Result.fromMaybe ("Leftward track movement failed for company " ++ company ++ ".")
+                |> Result.fromMaybe ("Leftward track movement failed for company " ++ cName company ++ ".")
 
 
 payDividend : CompanyName -> Int -> Market -> Result String Market
@@ -377,16 +368,15 @@ payDividend company amount ({playerShares} as market) =
             playerTransactions =
                 playerShares
                     |> Dict.toList
-                    |> List.map (\(player,shares) ->
-                                     Dict.get company shares
-                                         |> Maybe.map (Tuple.pair player)
-                                )
-                    |> Maybe.values
-                    |> List.concatMap (\(player,shareCount) ->
-                                           [ creditPlayer player (shareCount * perShare)
-                                           , debitBank (shareCount * perShare)
-                                           ]
-                                      )
+                    |> List.concatMap
+                       (\((p,c),shares) ->
+                            if c == company
+                            then
+                                [ creditPlayer p (shares * perShare)
+                                , debitBank (shares * perShare)
+                                ]
+                            else []
+                       )
             companyAmount = companyShares market company * perShare
             companyTransaction =
                 [ creditCompany company companyAmount
@@ -421,10 +411,10 @@ removeBankShare : CompanyName -> Market -> Result String Market
 removeBankShare company ({ bankShares } as market) =
     case Dict.get company bankShares of
         Nothing ->
-            Err <| "No shares in the stock market for " ++ company ++ "."
+            Err <| "No shares in the stock market for " ++ cName company ++ "."
 
         Just 0 ->
-            Err <| "No shares in the stock market for " ++ company ++ "."
+            Err <| "No shares in the stock market for " ++ cName company ++ "."
 
         Just x ->
             Ok <| { market | bankShares = Dict.insert company (x - 1) bankShares }
@@ -435,18 +425,11 @@ addPlayerShare player company ({ playerShares, certificateLimit } as market) =
     { market
         | playerShares =
             playerShares
-                |> Dict.update player
-                    (Maybe.withDefault (Dict.singleton company 0)
-                        >> Dict.update company
-                            (Maybe.withDefault 0
-                                >> (\x -> Just <| x + 1)
-                            )
-                        >> Just
-                    )
+                |> Dict.update (player,company) (Maybe.withDefault 0 >> (+) 1 >> Just)
     }
         |> Ok
         |> Result.guard (\m -> playerCertificateCount m player <= certificateLimit)
-            ("Player " ++ player ++ " already at certificate limit.")
+            ("Player " ++ pName player ++ " already at certificate limit.")
         |> Result.map (updatePresidency company)
 
 
@@ -455,24 +438,24 @@ removePlayerShare player company ({ playerShares, presidents } as market) =
     if
         Dict.get company presidents
             == Just player
-            && Dict.get2 player company playerShares
+            && Dict.get (player, company) playerShares
             == Just 2
     then
         Err "President's share may not be sold."
 
     else
-        case Dict.get2 player company playerShares of
+        case Dict.get (player, company) playerShares of
             Nothing ->
-                Err <| "No shares of " ++ company ++ " owned by " ++ player ++ "."
+                Err <| "No shares of " ++ cName company ++ " owned by " ++ pName player ++ "."
 
             Just 0 ->
-                Err <| "No shares of " ++ company ++ " owned by " ++ player ++ "."
+                Err <| "No shares of " ++ cName company ++ " owned by " ++ pName player ++ "."
 
             Just x ->
                 { market
                     | playerShares =
                         playerShares
-                            |> Dict.update player (Maybe.map <| Dict.insert company (x - 1))
+                            |> Dict.insert (player, company) (x - 1)
                 }
                     |> updatePresidency company
                     |> Ok
@@ -482,16 +465,12 @@ updatePresidency : CompanyName -> Market -> Market
 updatePresidency company ({ presidents, playerShares } as market) =
     { market
         | presidents =
-            Dict.toList playerShares
-                |> List.map
-                    (\( player, shares ) ->
-                        Dict.get company shares
-                            |> Maybe.map (Tuple.pair player)
-                    )
-                |> Maybe.values
+            playerShares
+                |> Dict.toList
+                |> List.filter (Tuple.first >> Tuple.second >> (==) company)
                 |> List.maximumBy Tuple.second
                 |> Maybe.map
-                    (\( shareLeader, shareCount ) ->
+                    (\( (shareLeader,_), shareCount ) ->
                         case Dict.get company presidents of
                             Nothing ->
                                 Dict.insert company shareLeader presidents
@@ -499,7 +478,7 @@ updatePresidency company ({ presidents, playerShares } as market) =
                             Just currentPresident ->
                                 if
                                     shareCount
-                                        > (Dict.get2 currentPresident company playerShares
+                                        > (Dict.get (currentPresident, company) playerShares
                                             |> Maybe.withDefault 0
                                           )
                                 then
@@ -519,7 +498,7 @@ creditPlayer player amount ({ playerCash } as market) =
 
     else
         Dict.get player playerCash
-            |> Result.fromMaybe ("No cash entry for player " ++ player ++ ".")
+            |> Result.fromMaybe ("No cash entry for player " ++ pName player ++ ".")
             |> Result.map
                 (\currCash ->
                     { market
@@ -535,8 +514,8 @@ debitPlayer player amount ({ playerCash } as market) =
 
     else
         Dict.get player playerCash
-            |> Result.fromMaybe ("No cash entry for player " ++ player ++ ".")
-            |> Result.guard (\x -> x >= amount) ("Player " ++ player ++ " doesn't have enough cash.")
+            |> Result.fromMaybe ("No cash entry for player " ++ pName player ++ ".")
+            |> Result.guard (\x -> x >= amount) ("Player " ++ pName player ++ " doesn't have enough cash.")
             |> Result.map
                 (\currCash ->
                     { market
@@ -552,7 +531,7 @@ creditCompany company amount ({ companyCash } as market) =
 
     else
         Dict.get company companyCash
-            |> Result.fromMaybe ("No cash entry for company " ++ company ++ ".")
+            |> Result.fromMaybe ("No cash entry for company " ++ cName company ++ ".")
             |> Result.map
                 (\currCash ->
                     { market
@@ -568,8 +547,8 @@ debitCompany company amount ({ companyCash } as market) =
 
     else
         Dict.get company companyCash
-            |> Result.fromMaybe ("No cash entry for company " ++ company ++ ".")
-            |> Result.guard (\x -> x >= amount) ("Company " ++ company ++ " doesn't have enough cash.")
+            |> Result.fromMaybe ("No cash entry for company " ++ cName company ++ ".")
+            |> Result.guard (\x -> x >= amount) ("Company " ++ cName company ++ " doesn't have enough cash.")
             |> Result.map
                 (\currCash ->
                     { market

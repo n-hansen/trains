@@ -1,13 +1,14 @@
 module StockMarket.Parser exposing (..)
 
+import AssocList as Dict
 import Char
-import Dict
 import List
 import List.Extra as List
 import Maybe
+import Maybe.Extra as Maybe
 import Parser exposing (Parser,(|=),(|.))
 import Set
-import StockMarket exposing (Market, PlayerName, CompanyName, ShareValueTrack(..),linearShareValueTrack, insertCompanyShareValue)
+import StockMarket exposing (Market, PlayerName(..), CompanyName(..), ShareValueTrack(..),linearShareValueTrack, insertCompanyShareValue)
 import Tuple
 
 
@@ -18,7 +19,7 @@ type alias ParseState =
     , activePlayer : Maybe PlayerName
     , companyOrder : List CompanyName
     , playerCash : List (PlayerName, Int)
-    , playerShares : List (PlayerName, CompanyName, Int)
+    , playerShares : List ((PlayerName, CompanyName), Int)
     , presidents : List (CompanyName, PlayerName)
     , bankShares : List (CompanyName, Int)
     , shareValues : List (CompanyName,Int)
@@ -115,7 +116,7 @@ playerParser =
                   | playerOrder = player :: playerOrder
                   , playerCash = (player, startingCash) :: playerCash
                   , activePlayer = if isActive then Just player else activePlayer
-                  , playerShares = playerShares ++ List.map (\(c,_,s)->(player,c,s)) shares
+                  , playerShares = playerShares ++ List.map (\(c,_,s)->((player,c),s)) shares
                   , presidents =
                       shares
                           |> List.filter (\(_,p,_) -> p)
@@ -128,7 +129,7 @@ playerParser =
            , Parser.keyword "p"
            ]
         |. assignParser
-        |= nameParser
+        |= Parser.map P nameParser
         |= maybeStar
         |. spaces
         |= moneyParser
@@ -140,7 +141,7 @@ playerParser =
            , spaces = spaces
            , trailing = Parser.Optional
            , item =
-               Parser.succeed (\a b c -> (a,b,c))
+               Parser.succeed (\a b c -> (C a,b,c))
                    |= nameParser
                    |= maybeStar
                    |. assignParser
@@ -155,19 +156,25 @@ companyParser =
               let
                   (tShares,pShares) =
                       shares
-                          |> List.partition (\(p,_,s) -> p == "treasury")
-                          |> Tuple.mapFirst (List.map (\(_,_,s) -> s) >> List.sum)
+                          |> List.mapAccuml
+                             (\acc (p,_,s) ->
+                                  case p of
+                                      Nothing -> (acc + s,Nothing)
+                                      Just player -> ( acc
+                                                     , Just ((player,company), s)
+                                                     )
+                             ) 0
 
               in
                   { st
                       | companyOrder = company :: companyOrder
                       , shareValues = (company, value) :: shareValues
-                      , playerShares = playerShares ++ List.map (\(p,_,s)->(p,company,s)) pShares
+                      , playerShares = playerShares ++ Maybe.values pShares
                       , bankShares = if tShares == 0 then bankShares else (company,tShares) :: bankShares
                       , presidents =
-                          case List.find (\(_,president,_) -> president) pShares of
-                              Nothing -> presidents
-                              Just (player,_,_) -> (company,player) :: presidents
+                          case List.find (\(_,president,_) -> president) shares of
+                              Just (Just player,_,_) -> (company,player) :: presidents
+                              _ -> presidents
 
                   }
         )
@@ -176,7 +183,7 @@ companyParser =
            , Parser.keyword "c"
            ]
         |. assignParser
-        |= nameParser
+        |= Parser.map C nameParser
         |. spaces
         |= moneyParser
         |. spaces
@@ -189,9 +196,9 @@ companyParser =
            , item =
                Parser.succeed (\a b c -> (a,b,c))
                    |= Parser.oneOf
-                      [ nameParser
-                      , Parser.succeed "treasury" |. Parser.keyword "bank"
-                      , Parser.succeed "treasury" |. Parser.keyword "treasury"
+                      [ Parser.map (P >> Just) nameParser
+                      , Parser.succeed Nothing |. Parser.keyword "bank"
+                      , Parser.succeed Nothing |. Parser.keyword "treasury"
                       ]
                    |= maybeStar
                    |. assignParser

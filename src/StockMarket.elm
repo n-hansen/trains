@@ -7,12 +7,14 @@ module StockMarket exposing
     , ShareValueTrack(..)
     , addCompany
     , addPlayer
+    , cName
     , insertCompanyShareValue
     , linearShareValueTrack
     , companyShareValue
     , companyShares
     , emptyMarket
     , playerCertificateCount
+    , pName
     , playerNetWorth
     , playerStockValue
     , runProjection

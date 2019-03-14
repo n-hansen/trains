@@ -1,7 +1,7 @@
 module StockMarket.Render.Types exposing (..)
 
+import AssocList as Dict exposing (Dict)
 import Color
-import Dict exposing (Dict)
 import StockMarket exposing (..)
 
 

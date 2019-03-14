@@ -156,10 +156,14 @@ playerStockValue ({ playerShares } as market) player =
     playerShares
         |> Dict.foldl
            (\(p,c) s acc ->
-                companyShareValue market c
-                    |> Maybe.withDefault 0
-                    |> (*) s
-                    |> (+) acc
+                if p == player
+                then
+                    companyShareValue market c
+                        |> Maybe.withDefault 0
+                        |> (*) s
+                        |> (+) acc
+                else
+                    acc
            ) 0
 
 

@@ -1,7 +1,7 @@
 module StockMarket.Render.Projection exposing (..)
 
+import AssocList as Dict exposing (Dict)
 import Css
-import Dict
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attr
 import Html.Styled.Events as Events
@@ -13,7 +13,7 @@ import Maybe
 import Maybe.Extra as Maybe
 import Parser exposing ((|=), (|.))
 import Result
-import StockMarket as SM exposing (Action(..), CompanyName, Market, PlayerName, Projection)
+import StockMarket as SM exposing (Action(..), CompanyName(..), Market, PlayerName(..), Projection)
 import StockMarket.Render.Types exposing (..)
 import Svg.Styled as Svg
 import Tuple
@@ -52,11 +52,11 @@ networthChart { market, getColor } projection =
                 markets
         chart =
             market.playerOrder
-                |> List.map (\player ->
+                |> List.map (\(P pName as player) ->
                                  LineChart.line
-                                 (getColor player |> .primary)
+                                 (getColor pName |> .primary)
                                  Dots.circle
-                                 player
+                                 pName
                                  (dataseries player)
                             )
                 |> LineChart.view Tuple.first Tuple.second
@@ -85,11 +85,11 @@ relativeNetworthChart { market, getColor } projection =
                 |> List.map2 (\avgNw (ix,nw) -> (ix,nw-avgNw)) baselines
         chart =
             market.playerOrder
-                |> List.map (\player ->
+                |> List.map (\(P pName as player) ->
                                  LineChart.line
-                                 (getColor player |> .primary)
+                                 (getColor pName |> .primary)
                                  Dots.circle
-                                 player
+                                 pName
                                  (normalizedDataseries player)
                             )
                 |> LineChart.view Tuple.first Tuple.second
@@ -117,12 +117,12 @@ projectionInputForm : RenderContext msg -> Html msg
 projectionInputForm { market, projectionInput, updateProjectionInput } =
     market.companyOrder
         |> List.map
-           ( \company ->
+           ( \(C cName as company) ->
                  Html.div
                  []
                  [ Html.span
                        []
-                       [ Html.text <| company ++ ": "
+                       [ Html.text <| cName ++ ": "
                        ]
                  , Html.input
                      [ Dict.get company projectionInput

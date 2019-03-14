@@ -1,6 +1,6 @@
 module StockMarket.Render.ProjectionTest exposing (suite)
 
-import Dict
+import AssocList as Dict
 import StockMarket exposing (..)
 import StockMarket.Render.Types exposing (..)
 import StockMarket.Render.Projection exposing (..)
@@ -15,58 +15,58 @@ suite =
               [ describe "buildCompanyProjection"
                     [ test "test 1" <|
                         \_ ->
-                            ("NYC", ">")
+                            (C "NYC", ">")
                                 |> buildCompanyProjection
-                                |> Expect.equal (Just [[MoveShareValueRight "NYC"]])
+                                |> Expect.equal (Just [[MoveShareValueRight <| C "NYC"]])
                     , test "test 2" <|
                         \_ ->
-                            ("NYC", "<")
+                            (C "NYC", "<")
                                 |> buildCompanyProjection
-                                |> Expect.equal (Just [[MoveShareValueLeft "NYC"]])
+                                |> Expect.equal (Just [[MoveShareValueLeft <| C "NYC"]])
                     , test "test 3" <|
                         \_ ->
-                            ("NYC", "><")
+                            (C "NYC", "><")
                                 |> buildCompanyProjection
-                                |> Expect.equal (Just [[MoveShareValueRight "NYC"
-                                                       ,MoveShareValueLeft "NYC"
+                                |> Expect.equal (Just [[MoveShareValueRight <| C "NYC"
+                                                       ,MoveShareValueLeft <| C "NYC"
                                                        ]])
                     , test "test 4" <|
                         \_ ->
-                            ("NYC", "><,<>")
+                            (C "NYC", "><,<>")
                                 |> buildCompanyProjection
-                                |> Expect.equal (Just [ [ MoveShareValueRight "NYC"
-                                                        , MoveShareValueLeft "NYC"
+                                |> Expect.equal (Just [ [ MoveShareValueRight <| C "NYC"
+                                                        , MoveShareValueLeft <| C "NYC"
                                                         ]
-                                                      , [ MoveShareValueLeft "NYC"
-                                                        , MoveShareValueRight "NYC"
+                                                      , [ MoveShareValueLeft <| C "NYC"
+                                                        , MoveShareValueRight <| C "NYC"
                                                         ]
                                                       ]
                                                 )
                     , test "test 5" <|
                         \_ ->
-                            ("NYC","120")
+                            (C "NYC","120")
                                 |> buildCompanyProjection
-                                |> Expect.equal (Just [[PayDividend "NYC" 120]])
+                                |> Expect.equal (Just [[PayDividend (C "NYC") 120]])
                     ]
               , describe "buildProjection"
                   [ test "test 1" <|
                       \_ ->
-                          Dict.fromList [ ("NYC", ">") ]
+                          Dict.fromList [ (C "NYC", ">") ]
                               |> buildProjection
-                              |> Expect.equal (Just [[MoveShareValueRight "NYC"]])
+                              |> Expect.equal (Just [[MoveShareValueRight <| C "NYC"]])
                   , test "test 2" <|
                       \_ ->
-                          Dict.fromList [ ("NYC", ">,<")
-                                        , ("IC" , ",>")
-                                        , ("B&O", "<<")
+                          Dict.fromList [ (C "NYC", ">,<")
+                                        , (C "IC" , ",>")
+                                        , (C "B&O", "<<")
                                         ]
                               |> buildProjection
-                              |> Expect.equal ( Just [ [ MoveShareValueLeft "B&O"
-                                                       , MoveShareValueLeft "B&O"
-                                                       , MoveShareValueRight "NYC"
+                              |> Expect.equal ( Just [ [ MoveShareValueLeft <| C "B&O"
+                                                       , MoveShareValueLeft <| C "B&O"
+                                                       , MoveShareValueRight <| C "NYC"
                                                        ]
-                                                     , [ MoveShareValueRight "IC"
-                                                       , MoveShareValueLeft "NYC"
+                                                     , [ MoveShareValueRight <| C "IC"
+                                                       , MoveShareValueLeft <| C "NYC"
                                                        ]
                                                     ]
                                               )

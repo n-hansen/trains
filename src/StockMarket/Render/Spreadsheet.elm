@@ -1,9 +1,9 @@
 module StockMarket.Render.Spreadsheet exposing (renderSpreadsheet,buildLineSpec)
 
+import AssocList as Dict exposing (Dict)
 import Basics.Extra exposing (..)
 import Char
 import Css exposing (Style)
-import Dict exposing (Dict)
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attr
 import Html.Styled.Events as Events
@@ -12,13 +12,12 @@ import List.Extra as List
 import Maybe
 import Maybe.Extra as Maybe
 import Set
-import StockMarket as SM exposing (Action(..), Market, Projection)
+import StockMarket as SM exposing (Action(..), Market, Projection,CompanyName(..),PlayerName(..))
 import StockMarket.Render.Types exposing (..)
 import String
 import Tree exposing (Tree)
 import Tuple
 import Util.Color as Color
-import Util.Dict as Dict
 
 
 renderSpreadsheet : RenderContext msg -> Html msg
@@ -39,7 +38,7 @@ spreadsheetContainer {market} =
             Tree.tree "sheet"
                 [ Tree.singleton "playerName"
                 , Tree.tree "companies" <|
-                    List.map Tree.singleton companyOrder
+                    List.map (Tree.singleton << SM.cName) companyOrder
                 , Tree.tree "playerInfo"
                     [ Tree.singleton "certificates"
                     , Tree.singleton "playerCash"
@@ -52,7 +51,7 @@ spreadsheetContainer {market} =
             Tree.tree "sheet"
                 [ Tree.singleton "headings"
                 , Tree.tree "players" <|
-                    List.map Tree.singleton playerOrder
+                    List.map (Tree.singleton << SM.pName) playerOrder
                 , Tree.tree "stockInfo"
                     [ Tree.singleton "bankShares"
                     , Tree.singleton "companyShares"
@@ -104,19 +103,19 @@ playerInfo { actionMessage, market, getColor } =
         infoCells =
             playerOrder
                 |> List.concatMap
-                    (\player ->
-                         let primaryBackground =
-                                 getColor player
-                                     |> .primary
+                    (\(P pName as player) ->
+                         let
+                             pColor = getColor pName
+                             primaryBackground =
+                                 pColor.primary
                                      |> Color.toCssColor
                                      |> Css.backgroundColor
                              secondaryBackground =
-                                 getColor player
-                                     |> .secondary
+                                 pColor.secondary
                                      |> Color.toCssColor
                                      |> Css.backgroundColor
                          in
-                             [ gridCell player
+                             [ gridCell pName
                                  "playerName"
                                  [ primaryBackground ]
                                  [ SetActivePlayer player
@@ -124,10 +123,10 @@ playerInfo { actionMessage, market, getColor } =
                                        |> Events.onClick
                                  ]
                                  [ Html.text <|
-                                       player ++
+                                       pName ++
                                        if Just player == activePlayer then "*" else ""
                                  ]
-                             , gridCell player
+                             , gridCell pName
                                  "playerCash"
                                  [ secondaryBackground ]
                                  []
@@ -136,7 +135,7 @@ playerInfo { actionMessage, market, getColor } =
                                      |> String.fromInt
                                      |> Html.text
                                  ]
-                             , gridCell player
+                             , gridCell pName
                                  "certificates"
                                  [ secondaryBackground ]
                                  []
@@ -144,7 +143,7 @@ playerInfo { actionMessage, market, getColor } =
                                      |> String.fromInt
                                      |> Html.text
                                  ]
-                             , gridCell player
+                             , gridCell pName
                                  "playerStockValue"
                                  [ secondaryBackground ]
                                  []
@@ -152,7 +151,7 @@ playerInfo { actionMessage, market, getColor } =
                                      |> String.fromInt
                                      |> Html.text
                                  ]
-                             , gridCell player
+                             , gridCell pName
                                  "netWorth"
                                  [ secondaryBackground ]
                                  []
@@ -194,17 +193,20 @@ stockInfo { actionMessage, market, getColor } =
             companyOrder
                 |> List.concatMap
                     (\company ->
-                        [ gridCell "headings"
-                            company
-                            [ getColor company
-                                  |> .primary
-                                  |> Color.toCssColor
-                                  |> Css.backgroundColor
-                            ]
+                         let
+                             cName = SM.cName company
+                         in
+                             [ gridCell "headings"
+                                   cName
+                                   [ getColor cName
+                                         |> .primary
+                                         |> Color.toCssColor
+                                         |> Css.backgroundColor
+                                   ]
                             []
-                            [ Html.text company ]
+                            [ Html.text cName ]
                         , gridCell "bankShares"
-                            company
+                            cName
                             []
                             (activePlayerAction
                                  (\player -> BuyShareFromBank player company)
@@ -216,7 +218,7 @@ stockInfo { actionMessage, market, getColor } =
                                 |> Html.text
                             ]
                         , gridCell "companyShares"
-                            company
+                            cName
                             []
                             (activePlayerAction
                                  (\player -> BuyShareFromCompany player company)
@@ -227,7 +229,7 @@ stockInfo { actionMessage, market, getColor } =
                                 |> Html.text
                             ]
                         , gridCell "stockPrice"
-                            company
+                            cName
                             []
                             []
                             ( SM.companyShareValue market company
@@ -274,39 +276,38 @@ stockInfo { actionMessage, market, getColor } =
         playerShareInfo =
             companyOrder
                 |> List.concatMap
-                    (\company ->
-                        List.map
-                            (\player ->
-                                gridCell player
-                                    company
-                                    [ getColor player
-                                          |> .secondary
-                                          |> Color.toCssColor
-                                          |> Css.backgroundColor
-                                    ]
-                                    ( if activePlayer == Just player
-                                      then
-                                          SellShareToBank player company
-                                              |> actionMessage
-                                              |> Events.onClick
-                                              |> List.singleton
-                                      else []
-                                    )
-                                    [ Dict.get2 player company playerShares
-                                        |> Maybe.map String.fromInt
-                                        |> Maybe.map
-                                            (\cnt ->
-                                                if Dict.get company presidents == Just player then
-                                                    cnt ++ "*"
+                    (\(C cName as company) ->
+                         List.map (\(P pName as player) ->
+                                       gridCell pName
+                                           cName
+                                           [ getColor pName
+                                                 |> .secondary
+                                                 |> Color.toCssColor
+                                                 |> Css.backgroundColor
+                                           ]
+                                           ( if activePlayer == Just player
+                                             then
+                                                 SellShareToBank player company
+                                                     |> actionMessage
+                                                     |> Events.onClick
+                                                     |> List.singleton
+                                             else []
+                                           )
+                                           [ Dict.get (player, company) playerShares
+                                                 |> Maybe.map String.fromInt
+                                                 |> Maybe.map
+                                                    (\cnt ->
+                                                         if Dict.get company presidents == Just player then
+                                                             cnt ++ "*"
 
-                                                else
-                                                    cnt
-                                            )
-                                        |> Maybe.withDefault ""
-                                        |> Html.text
-                                    ]
-                            )
-                            playerOrder
+                                                         else
+                                                             cnt
+                                                    )
+                                                 |> Maybe.withDefault ""
+                                                 |> Html.text
+                                           ]
+                                  )
+                         playerOrder
                     )
     in
     stockHeadings ++ companyInfo ++ playerShareInfo

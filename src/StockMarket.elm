@@ -38,12 +38,16 @@ import Util.Result as Result
 -- Types
 
 
-type alias PlayerName =
-    String
+type PlayerName = P String
+
+pName : PlayerName -> String
+pName (P s) = s
 
 
-type alias CompanyName =
-    String
+type CompanyName = C String
+
+cName : CompanyName -> String
+cName (C s) = s
 
 
 type ShareValueTrack =

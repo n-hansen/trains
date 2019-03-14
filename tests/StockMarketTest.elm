@@ -1,12 +1,11 @@
 module StockMarketTest exposing (suite)
 
-import Dict
+import AssocList as Dict
 import Expect
 import Maybe.Extra as Maybe
 import Result
 import StockMarket exposing (..)
 import Test exposing (..)
-import Util.Dict as Dict
 
 
 suite : Test
@@ -16,44 +15,44 @@ suite =
               [ test "add player" <|
                   \_ ->
                       emptyMarket (linearShareValueTrack []) 1000 5 8
-                          |> addPlayer "Alice" 100
-                          |> addPlayer "Bob" 150
-                          |> Expect.all [ .playerOrder >> Expect.equal ["Alice","Bob"]
+                          |> addPlayer (P "Alice") 100
+                          |> addPlayer (P "Bob") 150
+                          |> Expect.all [ .playerOrder >> Expect.equal [P "Alice",P "Bob"]
                                         , .playerCash
-                                              >> Dict.get "Alice"
+                                              >> Dict.get (P "Alice")
                                               >> Expect.equal (Just 100)
                                         , .playerCash
-                                              >> Dict.get "Bob"
+                                              >> Dict.get (P "Bob")
                                               >> Expect.equal (Just 150)
                                         , .bank >> Expect.equal 750
                                         ]
               , test "add company" <|
                   \_ ->
                       emptyMarket (linearShareValueTrack [50,60]) 1000 5 8
-                          |> addCompany "Grand Trunk" 50
-                          |> addCompany "NYC" 60
-                          |> Expect.all [ .companyOrder >> Expect.equal ["Grand Trunk", "NYC"]
+                          |> addCompany (C "Grand Trunk") 50
+                          |> addCompany (C "NYC") 60
+                          |> Expect.all [ .companyOrder >> Expect.equal [(C "Grand Trunk"), (C "NYC")]
                                         , .companyCash
-                                              >> Dict.get "Grand Trunk"
+                                              >> Dict.get (C "Grand Trunk")
                                               >> Expect.equal (Just 0)
                                         , .companyCash
-                                              >> Dict.get "NYC"
+                                              >> Dict.get (C "NYC")
                                               >> Expect.equal (Just 0)
-                                        , (\m -> companyShareValue m "Grand Trunk")
+                                        , (\m -> companyShareValue m (C "Grand Trunk"))
                                               >> Expect.equal (Just 50)
-                                        , (\m -> companyShareValue m "NYC")
+                                        , (\m -> companyShareValue m (C "NYC"))
                                               >> Expect.equal (Just 60)
                                         ]
               ]
         , describe "Simple market example" <|
             let
-                p1 = "Alice"
-                p2 = "Bob"
-                p3 = "Candice"
-                p4 = "Doug"
-                c1 = "Grand Trunk"
-                c2 = "Erie"
-                c3 = "B&O"
+                p1 = P "Alice"
+                p2 = P "Bob"
+                p3 = P "Candice"
+                p4 = P "Doug"
+                c1 = C "Grand Trunk"
+                c2 = C "Erie"
+                c3 = C "B&O"
                 market =
                     { playerOrder = [ p1, p2, p3, p4 ]
                     , activePlayer = Just p1
@@ -67,14 +66,10 @@ suite =
                             ]
                     , playerShares =
                         Dict.fromList
-                            [ ( p1
-                              , Dict.fromList
-                                    [ ( c1, 2 )
-                                    , ( c2, 1 )
-                                    ]
-                              )
-                            , ( p2, Dict.fromList [ ( c2, 4 ) ] )
-                            , ( p4, Dict.fromList [ ( c3, 2 ) ] )
+                            [ ((p1,c1),2)
+                            , ((p1,c2),1)
+                            , ((p2,c2),4)
+                            , ((p4,c3),2)
                             ]
                     , presidents =
                         Dict.fromList
@@ -161,7 +156,7 @@ suite =
                                     >> Expect.equal (Ok 2)
                                 , Result.map (.bankShares >> Dict.get c2)
                                     >> Expect.equal (Ok (Just 2))
-                                , Result.map (.playerShares >> Dict.get2 p1 c2)
+                                , Result.map (.playerShares >> Dict.get (p1, c2))
                                     >> Expect.equal (Ok (Just 2))
                                 , Result.map (.playerCash >> Dict.get p1)
                                     >> Expect.equal (Ok (Just 80))
@@ -175,7 +170,7 @@ suite =
                             |> Expect.all
                                 [ Result.map (.bankShares >> Dict.get c2)
                                     >> Expect.equal (Ok (Just 2))
-                                , Result.map (.playerShares >> Dict.get2 p3 c2)
+                                , Result.map (.playerShares >> Dict.get (p3, c2))
                                     >> Expect.equal (Ok (Just 1))
                                 ]
                 , test "certificate limit" <|
@@ -214,7 +209,7 @@ suite =
                         market
                             |> tryAction (BuyShareFromCompany p1 c2)
                             |> Expect.all
-                                [ Result.map (.playerShares >> Dict.get2 p1 c2)
+                                [ Result.map (.playerShares >> Dict.get (p1, c2))
                                     >> Expect.equal (Ok (Just 2))
                                 , Result.map (\m -> companyShares m c2)
                                     >> Expect.equal (Ok 1)
@@ -261,12 +256,12 @@ suite =
                 , test "company launch" <|
                     \_ ->
                         market
-                            |> addCompany "NYC" 1
-                            |> tryAction (Batch [ BuyShareFromCompany p3 "NYC"
-                                                , BuyShareFromCompany p3 "NYC"
+                            |> addCompany (C "NYC") 1
+                            |> tryAction (Batch [ BuyShareFromCompany p3 <| C "NYC"
+                                                , BuyShareFromCompany p3 <| C "NYC"
                                                 ]
                                          )
-                            |> Result.map (.presidents >> Dict.get "NYC")
+                            |> Result.map (.presidents >> Dict.get (C "NYC"))
                             |> Expect.equal (Ok (Just p3))
                 ]
             , describe "SellShareToBank"
@@ -274,7 +269,7 @@ suite =
                     \_ ->
                         market
                             |> tryAction (SellShareToBank p2 c2)
-                            |> Expect.all [ Result.map (.playerShares >> Dict.get2 p2 c2)
+                            |> Expect.all [ Result.map (.playerShares >> Dict.get (p2, c2))
                                                 >> Expect.equal (Ok (Just 3))
                                           , Result.map (.bankShares >> Dict.get c2)
                                               >> Expect.equal (Ok (Just 4))

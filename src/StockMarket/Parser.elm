@@ -220,11 +220,7 @@ nameParser =
                 [' ','\n','\r','\t',',','$','¥','€','=',':','(',')','[',']','{','}','*']
         forbiddenWords =
             Set.fromList
-                [ "bank"
-                , "treasury"
-                , "company"
-                , "player"
-                ]
+                ["bank", "treasury"]
     in
         Parser.variable
             { start = \c -> not <| Char.isDigit c || Set.member c forbiddenChars
@@ -240,7 +236,7 @@ moneyParser =
            [ Parser.symbol "$"
            , Parser.symbol "¥"
            , Parser.symbol "€"
-           , spaces
+           , Parser.succeed ()
            ]
         |= Parser.int
 

@@ -1,9 +1,9 @@
 module StockMarket.Render exposing (..)
 
+import AssocList as Dict exposing (Dict)
 import Basics.Extra as Basics
 import Color
 import Css exposing (Style)
-import Dict exposing (Dict)
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attr
 import Html.Styled.Events as Events
@@ -60,8 +60,14 @@ assignColors : Market -> Dict String { primary : Color.Color
 assignColors {playerOrder,companyOrder} =
     let
         rotation = 0.618033988749895
-        sortedPlayers = List.sort playerOrder
-        sortedCompanies = List.sort companyOrder
+        sortedPlayers =
+            playerOrder
+                |> List.map StockMarket.pName
+                |> List.sort
+        sortedCompanies =
+            companyOrder
+                |> List.map StockMarket.cName
+                |> List.sort
         seedHue = String.join "#" sortedPlayers
                       |> Murmur3.hashString 42
                       |> modBy 9989899

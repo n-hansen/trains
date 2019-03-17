@@ -7,9 +7,12 @@ import List.Extra as List
 import Maybe
 import Maybe.Extra as Maybe
 import Parser exposing (Parser,(|=),(|.))
+import Result
+import Result.Extra as Result
 import Set
 import StockMarket exposing (Market, PlayerName(..), CompanyName(..), ShareValueTrack(..),linearShareValueTrack, insertCompanyShareValue)
 import Tuple
+import Util.Result as Result
 
 
 -- Types
@@ -23,10 +26,8 @@ type alias ParseState =
     , presidents : List (CompanyName, PlayerName)
     , bankShares : List (CompanyName, Int)
     , shareValues : List (CompanyName,Int)
-    , shareTrack : Maybe ShareValueTrack
-    , bank : Maybe Int
-    , totalShares : Maybe Int
     , certificateLimit : Maybe Int
+    , bank : Maybe Int
     }
 
 
@@ -44,10 +45,8 @@ blankState =
     , presidents = []
     , bankShares = []
     , shareValues = []
-    , shareTrack = Nothing
-    , bank = Nothing
-    , totalShares = Nothing
     , certificateLimit = Nothing
+    , bank = Nothing
     }
 
 
@@ -74,8 +73,6 @@ configStatementParser =
         , certificateCountParser
         , playerParser
         , companyParser
-        -- TODO:
-        -- ruleset
         ]
 
 
@@ -206,6 +203,8 @@ companyParser =
            }
 
 
+
+
 -- Actually spaces and commas.
 spaces : Parser ()
 spaces = Parser.chompWhile (\c -> c == ' ' || c == ',')
@@ -224,7 +223,7 @@ nameParser =
     let
         forbiddenChars =
             Set.fromList
-                [' ','\n','\r','\t',',','$','¥','€','=',':','(',')','[',']','{','}','*']
+                [' ','\n','\r','\t',',','$','¥','€','=',':',';','(',')','[',']','{','}','*']
         forbiddenWords =
             Set.fromList
                 ["bank", "treasury"]
@@ -257,3 +256,44 @@ maybeStar =
 
 
 -- Parsing operations
+
+
+parseAndMaterializeMarket : String -> Result (List String) Market
+parseAndMaterializeMarket  =
+    Parser.run configurationParser
+        >> Result.mapError (Parser.deadEndsToString >> List.singleton)
+        >> Result.map (List.foldl (<|) blankState)
+        >> Result.andThen materializeMarket
+
+
+materializeMarket : ParseState -> Result (List String) Market
+materializeMarket st =
+    let
+        playerOrder = Ok <| List.reverse st.playerOrder
+        activePlayer = Ok st.activePlayer
+        companyOrder = Ok <| List.reverse st.companyOrder
+        playerCash = Ok <| Dict.fromList st.playerCash
+        playerShares = Ok <| Dict.fromList st.playerShares
+        presidents = Ok <| Dict.fromList st.presidents
+        bankShares = Ok <| Dict.fromList st.bankShares
+        companyCash = Ok Dict.empty -- TODO
+        shareValues =
+            Ok <| linearShareValueTrack [0,10,20,30,40,50,60,70,80,90,100,112,124,137,150,165,180
+                                        ,195,212,230,250,270,295,320,345,375,405,440,475,510,500]
+        bank = st.bank |> Result.fromMaybe "Please set the amount of money in the bank."
+        totalShares = Ok 10
+        certificateLimit = st.certificateLimit |> Result.fromMaybe "Please set the certificate limit."
+    in
+        Ok Market
+            |> Result.andMapListErr playerOrder
+            |> Result.andMapListErr activePlayer
+            |> Result.andMapListErr companyOrder
+            |> Result.andMapListErr playerCash
+            |> Result.andMapListErr playerShares
+            |> Result.andMapListErr presidents
+            |> Result.andMapListErr bankShares
+            |> Result.andMapListErr companyCash
+            |> Result.andMapListErr shareValues
+            |> Result.andMapListErr bank
+            |> Result.andMapListErr totalShares
+            |> Result.andMapListErr certificateLimit

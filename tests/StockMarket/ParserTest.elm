@@ -1,6 +1,7 @@
 module StockMarket.ParserTest exposing (suite)
 
 
+import AssocList as Dict
 import Expect exposing (Expectation)
 import List
 import Parser
@@ -132,11 +133,52 @@ suite =
               , test "certificateCountParser" <|
                   \_ ->
                       checkParse
-                          ["certificates: 10"]
+                          ["certificates: 11"]
                           { blankState
-                              | certificateLimit = Just 10
+                              | certificateLimit = Just 11
                           }
               ]
+        , describe "materialization tests"
+            [ test "mat test 1" <|
+                \_ ->
+                    checkMaterialization
+                        ["certs:11"
+                        ,"c: NYC $100, bank:1, alice: 2, bob*:3"
+                        ,"c: GT $200, alice*:4"
+                        ,"b: $400"
+                        ,"p: alice $11"
+                        ,"p: bob* $12"
+                        ]
+                        ( Ok <| Market
+                              [P "alice", P "bob"]
+                              (Just <| P "bob")
+                              [C "NYC", C "GT"]
+                              ( Dict.fromList
+                                    [ (P "bob", 12)
+                                    , (P "alice", 11)
+                                    ]
+                              )
+                              ( Dict.fromList
+                                    [ ((P "alice", C "NYC"), 2)
+                                    , ((P "bob", C "NYC"), 3)
+                                    , ((P "alice", C "GT"), 4)
+                                    ]
+                              )
+                              ( Dict.fromList
+                                    [ (C "GT", P "alice")
+                                    , (C "NYC", P "bob")
+                                    ]
+                              )
+                              ( Dict.fromList
+                                    [(C "NYC", 1)]
+                              )
+                              Dict.empty
+                              (linearShareValueTrack [0,10,20,30,40,50,60,70,80,90,100,112,124,137,150,165,180,195,212,230,250,270,295,320,345,375,405,440,475,510,500])
+                              400
+                              10
+                              11
+                        )
+            ]
         ]
 
 
@@ -148,3 +190,11 @@ checkParse lines expectedState =
         |> Result.withDefault []
         |> List.foldl (<|) blankState
         |> Expect.equal expectedState
+
+
+checkMaterialization : List String -> Result (List String) Market -> Expectation
+checkMaterialization lines expected =
+    lines
+        |> String.join "\n"
+        |> parseAndMaterializeMarket
+        |> Expect.equal expected

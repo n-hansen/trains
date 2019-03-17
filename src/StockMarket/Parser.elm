@@ -1,4 +1,4 @@
-module StockMarket.Parser exposing (..)
+module StockMarket.Parser exposing (ParseState,ConfigStatement,blankState,parseAndMaterializeMarket,configurationParser)
 
 import AssocList as Dict
 import Char
@@ -16,6 +16,7 @@ import Util.Result as Result
 
 
 -- Types
+
 
 type alias ParseState =
     { playerOrder : List PlayerName

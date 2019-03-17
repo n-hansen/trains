@@ -20,3 +20,18 @@ andMapListErr next previous =
 
                 Ok _ ->
                     Err [err]
+
+
+andMapListConcatErrs : Result (List e) a -> Result (List e) (a -> b) -> Result (List e) b
+andMapListConcatErrs next previous =
+    case next of
+        Ok x ->
+            Result.map ((|>) x) previous
+
+        Err errs ->
+            case previous of
+                Err otherErrs ->
+                    Err <| errs ++ otherErrs
+
+                Ok _ ->
+                    Err errs

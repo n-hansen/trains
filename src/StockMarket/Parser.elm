@@ -273,7 +273,22 @@ materializeMarket st =
         activePlayer = Ok st.activePlayer
         companyOrder = Ok <| List.reverse st.companyOrder
         playerCash = Ok <| Dict.fromList st.playerCash
-        playerShares = Ok <| Dict.fromList st.playerShares
+        playerShares =
+                case
+                    st.playerShares
+                        |> List.foldl
+                           ( \ ((( (P pName as p)
+                                 , (C cName as c)), _))
+                                 errs ->
+                                     if not <| List.member p st.playerOrder
+                                     then ("Player " ++ pName ++ " owns stock in " ++ cName ++ " but is missing a declaration.") :: errs
+                                     else if not <| List.member c st.companyOrder
+                                          then ("Company " ++ cName ++ " is owned by " ++ pName ++ " but is missing a declaration.") :: errs
+                                          else errs
+                           ) []
+                of
+                    [] -> Ok <| Dict.fromList st.playerShares
+                    errs -> Err errs
         presidents = Ok <| Dict.fromList st.presidents
         bankShares = Ok <| Dict.fromList st.bankShares
         companyCash = Ok Dict.empty -- TODO
@@ -289,7 +304,7 @@ materializeMarket st =
             |> Result.andMapListErr activePlayer
             |> Result.andMapListErr companyOrder
             |> Result.andMapListErr playerCash
-            |> Result.andMapListErr playerShares
+            |> Result.andMapListConcatErrs playerShares
             |> Result.andMapListErr presidents
             |> Result.andMapListErr bankShares
             |> Result.andMapListErr companyCash

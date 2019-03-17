@@ -178,6 +178,64 @@ suite =
                               10
                               11
                         )
+            , test "mat test 2" <|
+                \_ ->
+                    checkMaterialization
+                        ["c: NYC $100, bank:1, alice: 2, bob*:3"
+                        ,"c: GT $200, alice*:4"
+                        ,"b: $400"
+                        ,"p: alice $11"
+                        ,"p: bob* $12"
+                        ]
+                        ( Err ["Please set the certificate limit."])
+            , test "mat test 3" <|
+                \_ ->
+                    checkMaterialization
+                        ["c: NYC $100, bank:1, alice: 2, bob*:3"
+                        ,"c: GT $200, alice*:4"
+                        ,"p: alice $11"
+                        ,"p: bob* $12"
+                        ]
+                        ( Err ["Please set the certificate limit."
+                              ,"Please set the amount of money in the bank."])
+            , test "mat test 4" <|
+                \_ ->
+                    checkMaterialization
+                        ["certs:11"
+                        ,"c: NYC $100, bank:1, alice: 2, bob*:3"
+                        ,"c: GT $200, alic*:4"
+                        ,"b: $400"
+                        ,"p: alice $11"
+                        ,"p: bob* $12"
+                        ]
+                        ( Err ["Player alic owns stock in GT but is missing a declaration."]
+                        )
+            , test "mat test 5" <|
+                \_ ->
+                    checkMaterialization
+                        ["certs:11"
+                        ,"c: NYC $100, bank:1, alice: 2, bob*:3"
+                        ,"c: GT $200, alic*:4"
+                        ,"b: $400"
+                        ,"p: alice $11"
+                        ,"p: bob* $12, C&O: 1"
+                        ]
+                        ( Err ["Company C&O is owned by bob but is missing a declaration."
+                              ,"Player alic owns stock in GT but is missing a declaration."
+                              ]
+                        )
+            -- , test "mat test 6" <|
+            --     \_ ->
+            --         checkMaterialization
+            --             ["certs:11"
+            --             ,"c: NYC $100, bank:1, alice: 3, bob*:2"
+            --             ,"c: GT $200, alice*:4"
+            --             ,"b: $400"
+            --             ,"p: alice $11"
+            --             ,"p: bob* $12"
+            --             ]
+            --             ( Err ["Player alic is the share leader of the NYC but is not president."]
+            --             )
             ]
         ]
 

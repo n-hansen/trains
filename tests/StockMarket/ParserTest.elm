@@ -172,7 +172,7 @@ suite =
                               ( Dict.fromList
                                     [(C "NYC", 1)]
                               )
-                              Dict.empty
+                              (Dict.fromList [(C "GT", 0),(C "NYC", 0)])
                               (linearShareValueTrack [0,10,20,30,40,50,60,70,80,90,100,112,124,137,150,165,180,195,212,230,250,270,295,320,345,375,405,440,475,510,500]
                                    |> insertCompanyShareValue (C "NYC") 100
                                    |> insertCompanyShareValue (C "GT") 200

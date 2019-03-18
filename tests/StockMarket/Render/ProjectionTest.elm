@@ -47,6 +47,11 @@ suite =
                             (C "NYC","120")
                                 |> buildCompanyProjection
                                 |> Expect.equal (Just [[PayDividend (C "NYC") 120]])
+                    , test "test 6" <|
+                        \_ ->
+                            (C "NYC", ">aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                                |> buildCompanyProjection
+                                |> Expect.equal Nothing
                     ]
               , describe "buildProjection"
                   [ test "test 1" <|

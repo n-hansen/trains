@@ -167,6 +167,7 @@ buildCompanyProjection (company, input) =
                 , Parser.succeed (\_ -> Parser.Loop ([], List.reverse currRound::pastRounds))
                      |= roundSeparator
                 , Parser.succeed ()
+                     |. Parser.end
                      |> Parser.map (\_ ->
                                         (List.reverse currRound :: pastRounds)
                                             |> List.reverse

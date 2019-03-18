@@ -74,7 +74,10 @@ configStatementParser =
         , certificateCountParser
         , playerParser
         , companyParser
-        , Parser.succeed identity |. Parser.lineComment "#"
+        , Parser.succeed identity
+            |. spaces
+            |. Parser.lineComment "#"
+        , Parser.succeed identity |. spaces
         ]
 
 

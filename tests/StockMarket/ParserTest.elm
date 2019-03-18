@@ -137,7 +137,7 @@ suite =
                           { blankState
                               | certificateLimit = Just 20
                           }
-              , test "commentParser" <|
+              , test "commentParser 1" <|
                   \_ ->
                       checkParse
                           ["bank: $600"
@@ -148,6 +148,19 @@ suite =
                               | bank = Just 600
                               , certificateLimit = Just 11
                           }
+              , test "commentParser 2" <|
+                  \_ ->
+                      checkParse
+                          ["bank: $600"
+                          ," "
+                          ," #foo bar baz quux"
+                          ,"certificates: 11"
+                          ]
+                          { blankState
+                              | bank = Just 600
+                              , certificateLimit = Just 11
+                          }
+
               ]
         , describe "materialization tests"
             [ test "mat test 1" <|

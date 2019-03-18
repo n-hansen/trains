@@ -5946,7 +5946,11 @@ var author$project$StockMarket$Parser$companyParser = A2(
 									A2(
 									elm$parser$Parser$ignorer,
 									elm$parser$Parser$succeed(elm$core$Maybe$Nothing),
-									elm$parser$Parser$keyword('treasury'))
+									elm$parser$Parser$keyword('treasury')),
+									A2(
+									elm$parser$Parser$ignorer,
+									elm$parser$Parser$succeed(elm$core$Maybe$Nothing),
+									elm$parser$Parser$keyword('market'))
 								]))),
 					A2(elm$parser$Parser$ignorer, author$project$StockMarket$Parser$maybeStar, author$project$StockMarket$Parser$assignParser)),
 				elm$parser$Parser$int),
@@ -6739,7 +6743,7 @@ var author$project$StockMarket$Render$Configure$blankState = {
 		elm$core$String$join,
 		'\n',
 		_List_fromArray(
-			['# Game Configuration', 'bank: 9000', 'certificateLimit: 11', '# Describe a company via \"company: company_name $share_price [treasury = shares,] [president* = shares,] [player = shares, ...]\"', 'company: B&O $100, treasury = 1, alice = 2, bob* = 3', 'company: C&O $0', 'company: Erie $0', 'company: GT $0', 'company: IC $0', 'company: NYC $0', 'company: PA $0', '# Describe players via \"player: player_name[active_player? -> *] $cash [company = shares, ...]\"', 'player: alice $200, C&O = 2', 'player: bob* $300']))
+			['# Game Configuration', 'bank: 9000', 'certificateLimit: 11', '# Describe a company via \"company: company_name $share_price [market = shares,] [president* = shares,] [player = shares, ...]\"', 'company: B&O $100, market = 1, alice = 2, bob* = 3', 'company: C&O $0', 'company: Erie $0', 'company: GT $0', 'company: IC $0', 'company: NYC $0', 'company: PA $0', '# Describe players via \"player: player_name[active_player? -> *] $cash [company = shares, ...]\"', 'player: alice $200, C&O = 2', 'player: bob* $300']))
 };
 var elm$core$Maybe$andThen = F2(
 	function (callback, maybeValue) {

@@ -200,7 +200,7 @@ companyParser =
                    |= Parser.oneOf
                       [ Parser.map (P >> Just) nameParser
                       , Parser.succeed Nothing |. Parser.keyword "bank"
-                      , Parser.succeed Nothing |. Parser.keyword "treasury"
+                      , Parser.succeed Nothing |. Parser.keyword "market"
                       ]
                    |= maybeStar
                    |. assignParser
@@ -231,7 +231,7 @@ nameParser =
                 [' ','\n','\r','\t',',','$','¥','€','=',':',';','(',')','[',']','{','}','*','#']
         forbiddenWords =
             Set.fromList
-                ["bank", "treasury"]
+                ["bank", "treasury","market"]
     in
         Parser.variable
             { start = \c -> not <| Char.isDigit c || Set.member c forbiddenChars

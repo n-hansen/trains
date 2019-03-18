@@ -111,7 +111,7 @@ suite =
               , test "companyParser 4" <|
                   \_ ->
                       checkParse
-                          ["company: C&O $100, treasury=1, alice=2, bob=3"]
+                          ["company: C&O $100, market=1, alice=2, bob=3"]
                           { blankState
                               | companyOrder = [C "C&O"]
                               , shareValues = [(C "C&O",100)]

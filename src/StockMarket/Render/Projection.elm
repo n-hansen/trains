@@ -1,6 +1,7 @@
 module StockMarket.Render.Projection exposing (..)
 
 import AssocList as Dict exposing (Dict)
+import Basics.Extra exposing (flip)
 import Css
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attr
@@ -20,26 +21,39 @@ import Tuple
 
 
 renderProjectionArea : RenderContext msg -> Html msg
-renderProjectionArea ({projectionInput} as ctx) =
-    [ Just <| projectionInputForm ctx
-    , projectionInput
-        |> buildProjection
-        |> Maybe.map (networthChart ctx)
-    , projectionInput
-        |> buildProjection
-        |> Maybe.map (relativeNetworthChart ctx)
-    ]
-    |> Maybe.values
-    |> Html.div
-       [ Attr.css [ Css.displayFlex
-                  , Css.flexDirection Css.row
-                  , Css.alignItems Css.flexStart
-                  ]
-       ]
+renderProjectionArea ctx =
+    Html.div
+        [ Attr.css [ Css.displayFlex
+                   , Css.flexDirection Css.row
+                   , Css.alignItems Css.flexStart
+                   ]
+        ]
+        [ projectionInputForm ctx
+        , chartDisplay ctx
+        ]
 
 
 
 -- View components
+
+
+chartDisplay : RenderContext msg -> Html msg
+chartDisplay ({projectionInput} as ctx) =
+    case buildProjection projectionInput of
+        Nothing -> Html.div [] []
+
+        Just projection ->
+            Html.div
+                [ Attr.css [ Css.displayFlex
+                           , Css.flexDirection Css.row
+                           , Css.flexWrap Css.wrap
+                           , Css.alignItems Css.center
+                           , Css.flex <| Css.int 1
+                           ]
+                ]
+                [ networthChart ctx projection
+                , relativeNetworthChart ctx projection
+                ]
 
 
 networthChart : RenderContext msg -> Projection -> Html msg
@@ -142,6 +156,15 @@ projectionInputForm { market, projectionInput, updateProjectionInput } =
                       ]
                       [ Html.text "Operating round projections:"]
                 ]
+        |> flip (++) [ Html.div
+                           [ Attr.css [ Css.fontSize Css.xSmall
+                                      , Css.padding <| Css.px 10
+                                      , Css.width <| Css.px 200
+                                      , Css.alignSelf Css.flexStart
+                                      ]
+                           ]
+                           [Html.text "Type a number for dividends paid, > for a stock bump, < for a stock drop, and a comma to separate rounds. No spaces allowed."]
+                     ]
         |> Html.div
            [Attr.css [ Css.displayFlex
                      , Css.flexDirection Css.column

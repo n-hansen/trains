@@ -8636,7 +8636,10 @@ var author$project$StockMarket$Render$Projection$buildCompanyProjection = functi
 									elm$core$List$reverse(currRound),
 									pastRounds)));
 					},
-					elm$parser$Parser$succeed(0))
+					A2(
+						elm$parser$Parser$ignorer,
+						elm$parser$Parser$succeed(0),
+						elm$parser$Parser$end))
 				]));
 	};
 	var parser = A2(

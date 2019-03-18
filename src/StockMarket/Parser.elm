@@ -292,10 +292,20 @@ materializeMarket st =
                     errs -> Err errs
         presidents = Ok <| Dict.fromList st.presidents
         bankShares = Ok <| Dict.fromList st.bankShares
-        companyCash = Ok Dict.empty -- TODO
+        companyCash =
+            st.companyOrder
+                |> List.map (\c -> (c,0))
+                |> Dict.fromList
+                |> Ok
         shareValues =
-            Ok <| linearShareValueTrack [0,10,20,30,40,50,60,70,80,90,100,112,124,137,150,165,180
-                                        ,195,212,230,250,270,295,320,345,375,405,440,475,510,500]
+            st.shareValues
+                |> List.foldl
+                   (\ (company, value) track -> insertCompanyShareValue company value track )
+
+                   (linearShareValueTrack [0,10,20,30,40,50,60,70,80,90,100,112,124,137,150,165,180
+                                          ,195,212,230,250,270,295,320,345,375,405,440,475,510,500]
+                   )
+                |> Ok
         bank = st.bank |> Result.fromMaybe "Please set the amount of money in the bank."
         totalShares = Ok 10
         certificateLimit = st.certificateLimit |> Result.fromMaybe "Please set the certificate limit."

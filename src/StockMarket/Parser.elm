@@ -74,6 +74,7 @@ configStatementParser =
         , certificateCountParser
         , playerParser
         , companyParser
+        , Parser.succeed identity |. Parser.lineComment "#"
         ]
 
 
@@ -224,7 +225,7 @@ nameParser =
     let
         forbiddenChars =
             Set.fromList
-                [' ','\n','\r','\t',',','$','¥','€','=',':',';','(',')','[',']','{','}','*']
+                [' ','\n','\r','\t',',','$','¥','€','=',':',';','(',')','[',']','{','}','*','#']
         forbiddenWords =
             Set.fromList
                 ["bank", "treasury"]

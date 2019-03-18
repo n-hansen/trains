@@ -133,9 +133,20 @@ suite =
               , test "certificateCountParser" <|
                   \_ ->
                       checkParse
-                          ["certificates: 11"]
+                          ["certificates: 20"]
                           { blankState
-                              | certificateLimit = Just 11
+                              | certificateLimit = Just 20
+                          }
+              , test "commentParser" <|
+                  \_ ->
+                      checkParse
+                          ["bank: $600"
+                          ,"#foo bar baz quux"
+                          ,"certificates: 11"
+                          ]
+                          { blankState
+                              | bank = Just 600
+                              , certificateLimit = Just 11
                           }
               ]
         , describe "materialization tests"

@@ -14062,150 +14062,6 @@ var author$project$StockMarket$Render$Projection$networthChart = F2(
 			'Absolute Networth',
 			rtfeldman$elm_css$Svg$Styled$fromUnstyled(chart));
 	});
-var rtfeldman$elm_css$Css$alignSelf = function (fn) {
-	return A3(
-		rtfeldman$elm_css$Css$Internal$getOverloadedProperty,
-		'alignSelf',
-		'align-self',
-		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
-};
-var rtfeldman$elm_css$Css$flexEnd = rtfeldman$elm_css$Css$prop1('flex-end');
-var rtfeldman$elm_css$Css$marginBottom = rtfeldman$elm_css$Css$prop1('margin-bottom');
-var rtfeldman$elm_css$Css$PxUnits = 0;
-var rtfeldman$elm_css$Css$px = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'px');
-var rtfeldman$elm_css$Html$Styled$input = rtfeldman$elm_css$Html$Styled$node('input');
-var rtfeldman$elm_css$Html$Styled$span = rtfeldman$elm_css$Html$Styled$node('span');
-var rtfeldman$elm_css$VirtualDom$Styled$property = F2(
-	function (key, value) {
-		return A3(
-			rtfeldman$elm_css$VirtualDom$Styled$Attribute,
-			A2(elm$virtual_dom$VirtualDom$property, key, value),
-			_List_Nil,
-			'');
-	});
-var rtfeldman$elm_css$Html$Styled$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			rtfeldman$elm_css$VirtualDom$Styled$property,
-			key,
-			elm$json$Json$Encode$string(string));
-	});
-var rtfeldman$elm_css$Html$Styled$Attributes$value = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('value');
-var rtfeldman$elm_css$Html$Styled$Events$alwaysStop = function (x) {
-	return _Utils_Tuple2(x, true);
-};
-var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
-	return {$: 1, a: a};
-};
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var rtfeldman$elm_css$VirtualDom$Styled$on = F2(
-	function (eventName, handler) {
-		return A3(
-			rtfeldman$elm_css$VirtualDom$Styled$Attribute,
-			A2(elm$virtual_dom$VirtualDom$on, eventName, handler),
-			_List_Nil,
-			'');
-	});
-var rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn = F2(
-	function (event, decoder) {
-		return A2(
-			rtfeldman$elm_css$VirtualDom$Styled$on,
-			event,
-			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
-	});
-var elm$json$Json$Decode$field = _Json_decodeField;
-var elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
-	});
-var elm$json$Json$Decode$string = _Json_decodeString;
-var rtfeldman$elm_css$Html$Styled$Events$targetValue = A2(
-	elm$json$Json$Decode$at,
-	_List_fromArray(
-		['target', 'value']),
-	elm$json$Json$Decode$string);
-var rtfeldman$elm_css$Html$Styled$Events$onInput = function (tagger) {
-	return A2(
-		rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn,
-		'input',
-		A2(
-			elm$json$Json$Decode$map,
-			rtfeldman$elm_css$Html$Styled$Events$alwaysStop,
-			A2(elm$json$Json$Decode$map, tagger, rtfeldman$elm_css$Html$Styled$Events$targetValue)));
-};
-var author$project$StockMarket$Render$Projection$projectionInputForm = function (_n0) {
-	var market = _n0.a_;
-	var projectionInput = _n0.a4;
-	var updateProjectionInput = _n0.fe;
-	return A2(
-		rtfeldman$elm_css$Html$Styled$div,
-		_List_fromArray(
-			[
-				rtfeldman$elm_css$Html$Styled$Attributes$css(
-				_List_fromArray(
-					[
-						rtfeldman$elm_css$Css$displayFlex,
-						rtfeldman$elm_css$Css$flexDirection(rtfeldman$elm_css$Css$column),
-						rtfeldman$elm_css$Css$alignItems(rtfeldman$elm_css$Css$flexEnd)
-					]))
-			]),
-		_Utils_ap(
-			_List_fromArray(
-				[
-					A2(
-					rtfeldman$elm_css$Html$Styled$div,
-					_List_fromArray(
-						[
-							rtfeldman$elm_css$Html$Styled$Attributes$css(
-							_List_fromArray(
-								[
-									rtfeldman$elm_css$Css$alignSelf(rtfeldman$elm_css$Css$center),
-									rtfeldman$elm_css$Css$fontSize(rtfeldman$elm_css$Css$large),
-									rtfeldman$elm_css$Css$marginBottom(
-									rtfeldman$elm_css$Css$px(5))
-								]))
-						]),
-					_List_fromArray(
-						[
-							rtfeldman$elm_css$Html$Styled$text('Operating round projections:')
-						]))
-				]),
-			A2(
-				elm$core$List$map,
-				function (company) {
-					var cName = company;
-					return A2(
-						rtfeldman$elm_css$Html$Styled$div,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A2(
-								rtfeldman$elm_css$Html$Styled$span,
-								_List_Nil,
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Html$Styled$text(cName + ': ')
-									])),
-								A2(
-								rtfeldman$elm_css$Html$Styled$input,
-								_List_fromArray(
-									[
-										rtfeldman$elm_css$Html$Styled$Attributes$value(
-										A2(
-											elm$core$Maybe$withDefault,
-											'',
-											A2(pzp1997$assoc_list$AssocList$get, company, projectionInput))),
-										rtfeldman$elm_css$Html$Styled$Events$onInput(
-										function (i) {
-											return updateProjectionInput(
-												A3(pzp1997$assoc_list$AssocList$insert, company, i, projectionInput));
-										})
-									]),
-								_List_Nil)
-							]));
-				},
-				market.bi)));
-};
 var elm$core$List$repeatHelp = F3(
 	function (result, n, value) {
 		repeatHelp:
@@ -14307,9 +14163,227 @@ var author$project$StockMarket$Render$Projection$relativeNetworthChart = F2(
 			'Relative Networth',
 			rtfeldman$elm_css$Svg$Styled$fromUnstyled(chart));
 	});
-var rtfeldman$elm_css$Css$flexStart = rtfeldman$elm_css$Css$prop1('flex-start');
-var author$project$StockMarket$Render$Projection$renderProjectionArea = function (ctx) {
+var rtfeldman$elm_css$Css$flex = rtfeldman$elm_css$Css$prop1('flex');
+var rtfeldman$elm_css$Css$flexWrap = rtfeldman$elm_css$Css$prop1('flex-wrap');
+var rtfeldman$elm_css$Css$UnitlessInteger = 0;
+var rtfeldman$elm_css$Css$int = function (val) {
+	return {
+		W: 0,
+		bq: 0,
+		ai: 0,
+		K: 0,
+		a$: 0,
+		bx: 0,
+		_: val,
+		aR: '',
+		bc: 0,
+		O: elm$core$String$fromInt(val)
+	};
+};
+var rtfeldman$elm_css$Css$wrap = {aW: 0, bn: 0, O: 'wrap'};
+var author$project$StockMarket$Render$Projection$chartDisplay = function (ctx) {
 	var projectionInput = ctx.a4;
+	var _n0 = author$project$StockMarket$Render$Projection$buildProjection(projectionInput);
+	if (_n0.$ === 1) {
+		return A2(rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_Nil);
+	} else {
+		var projection = _n0.a;
+		return A2(
+			rtfeldman$elm_css$Html$Styled$div,
+			_List_fromArray(
+				[
+					rtfeldman$elm_css$Html$Styled$Attributes$css(
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Css$displayFlex,
+							rtfeldman$elm_css$Css$flexDirection(rtfeldman$elm_css$Css$row),
+							rtfeldman$elm_css$Css$flexWrap(rtfeldman$elm_css$Css$wrap),
+							rtfeldman$elm_css$Css$alignItems(rtfeldman$elm_css$Css$center),
+							rtfeldman$elm_css$Css$flex(
+							rtfeldman$elm_css$Css$int(1))
+						]))
+				]),
+			_List_fromArray(
+				[
+					A2(author$project$StockMarket$Render$Projection$networthChart, ctx, projection),
+					A2(author$project$StockMarket$Render$Projection$relativeNetworthChart, ctx, projection)
+				]));
+	}
+};
+var rtfeldman$elm_css$Css$alignSelf = function (fn) {
+	return A3(
+		rtfeldman$elm_css$Css$Internal$getOverloadedProperty,
+		'alignSelf',
+		'align-self',
+		fn(rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
+};
+var rtfeldman$elm_css$Css$flexEnd = rtfeldman$elm_css$Css$prop1('flex-end');
+var rtfeldman$elm_css$Css$flexStart = rtfeldman$elm_css$Css$prop1('flex-start');
+var rtfeldman$elm_css$Css$marginBottom = rtfeldman$elm_css$Css$prop1('margin-bottom');
+var rtfeldman$elm_css$Css$padding = rtfeldman$elm_css$Css$prop1('padding');
+var rtfeldman$elm_css$Css$PxUnits = 0;
+var rtfeldman$elm_css$Css$px = A2(rtfeldman$elm_css$Css$Internal$lengthConverter, 0, 'px');
+var rtfeldman$elm_css$Css$width = rtfeldman$elm_css$Css$prop1('width');
+var rtfeldman$elm_css$Css$xSmall = {x: 0, O: 'x-small'};
+var rtfeldman$elm_css$Html$Styled$input = rtfeldman$elm_css$Html$Styled$node('input');
+var rtfeldman$elm_css$Html$Styled$span = rtfeldman$elm_css$Html$Styled$node('span');
+var rtfeldman$elm_css$VirtualDom$Styled$property = F2(
+	function (key, value) {
+		return A3(
+			rtfeldman$elm_css$VirtualDom$Styled$Attribute,
+			A2(elm$virtual_dom$VirtualDom$property, key, value),
+			_List_Nil,
+			'');
+	});
+var rtfeldman$elm_css$Html$Styled$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			rtfeldman$elm_css$VirtualDom$Styled$property,
+			key,
+			elm$json$Json$Encode$string(string));
+	});
+var rtfeldman$elm_css$Html$Styled$Attributes$value = rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('value');
+var rtfeldman$elm_css$Html$Styled$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 1, a: a};
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var rtfeldman$elm_css$VirtualDom$Styled$on = F2(
+	function (eventName, handler) {
+		return A3(
+			rtfeldman$elm_css$VirtualDom$Styled$Attribute,
+			A2(elm$virtual_dom$VirtualDom$on, eventName, handler),
+			_List_Nil,
+			'');
+	});
+var rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			rtfeldman$elm_css$VirtualDom$Styled$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var elm$json$Json$Decode$field = _Json_decodeField;
+var elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
+	});
+var elm$json$Json$Decode$string = _Json_decodeString;
+var rtfeldman$elm_css$Html$Styled$Events$targetValue = A2(
+	elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	elm$json$Json$Decode$string);
+var rtfeldman$elm_css$Html$Styled$Events$onInput = function (tagger) {
+	return A2(
+		rtfeldman$elm_css$Html$Styled$Events$stopPropagationOn,
+		'input',
+		A2(
+			elm$json$Json$Decode$map,
+			rtfeldman$elm_css$Html$Styled$Events$alwaysStop,
+			A2(elm$json$Json$Decode$map, tagger, rtfeldman$elm_css$Html$Styled$Events$targetValue)));
+};
+var author$project$StockMarket$Render$Projection$projectionInputForm = function (_n0) {
+	var market = _n0.a_;
+	var projectionInput = _n0.a4;
+	var updateProjectionInput = _n0.fe;
+	return A2(
+		rtfeldman$elm_css$Html$Styled$div,
+		_List_fromArray(
+			[
+				rtfeldman$elm_css$Html$Styled$Attributes$css(
+				_List_fromArray(
+					[
+						rtfeldman$elm_css$Css$displayFlex,
+						rtfeldman$elm_css$Css$flexDirection(rtfeldman$elm_css$Css$column),
+						rtfeldman$elm_css$Css$alignItems(rtfeldman$elm_css$Css$flexEnd)
+					]))
+			]),
+		A3(
+			elm_community$basics_extra$Basics$Extra$flip,
+			elm$core$Basics$append,
+			_List_fromArray(
+				[
+					A2(
+					rtfeldman$elm_css$Html$Styled$div,
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Html$Styled$Attributes$css(
+							_List_fromArray(
+								[
+									rtfeldman$elm_css$Css$fontSize(rtfeldman$elm_css$Css$xSmall),
+									rtfeldman$elm_css$Css$padding(
+									rtfeldman$elm_css$Css$px(10)),
+									rtfeldman$elm_css$Css$width(
+									rtfeldman$elm_css$Css$px(200)),
+									rtfeldman$elm_css$Css$alignSelf(rtfeldman$elm_css$Css$flexStart)
+								]))
+						]),
+					_List_fromArray(
+						[
+							rtfeldman$elm_css$Html$Styled$text('Type a number for dividends paid, > for a stock bump, < for a stock drop, and a comma to separate rounds. No spaces allowed.')
+						]))
+				]),
+			_Utils_ap(
+				_List_fromArray(
+					[
+						A2(
+						rtfeldman$elm_css$Html$Styled$div,
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$Attributes$css(
+								_List_fromArray(
+									[
+										rtfeldman$elm_css$Css$alignSelf(rtfeldman$elm_css$Css$center),
+										rtfeldman$elm_css$Css$fontSize(rtfeldman$elm_css$Css$large),
+										rtfeldman$elm_css$Css$marginBottom(
+										rtfeldman$elm_css$Css$px(5))
+									]))
+							]),
+						_List_fromArray(
+							[
+								rtfeldman$elm_css$Html$Styled$text('Operating round projections:')
+							]))
+					]),
+				A2(
+					elm$core$List$map,
+					function (company) {
+						var cName = company;
+						return A2(
+							rtfeldman$elm_css$Html$Styled$div,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									rtfeldman$elm_css$Html$Styled$span,
+									_List_Nil,
+									_List_fromArray(
+										[
+											rtfeldman$elm_css$Html$Styled$text(cName + ': ')
+										])),
+									A2(
+									rtfeldman$elm_css$Html$Styled$input,
+									_List_fromArray(
+										[
+											rtfeldman$elm_css$Html$Styled$Attributes$value(
+											A2(
+												elm$core$Maybe$withDefault,
+												'',
+												A2(pzp1997$assoc_list$AssocList$get, company, projectionInput))),
+											rtfeldman$elm_css$Html$Styled$Events$onInput(
+											function (i) {
+												return updateProjectionInput(
+													A3(pzp1997$assoc_list$AssocList$insert, company, i, projectionInput));
+											})
+										]),
+									_List_Nil)
+								]));
+					},
+					market.bi))));
+};
+var author$project$StockMarket$Render$Projection$renderProjectionArea = function (ctx) {
 	return A2(
 		rtfeldman$elm_css$Html$Styled$div,
 		_List_fromArray(
@@ -14322,20 +14396,11 @@ var author$project$StockMarket$Render$Projection$renderProjectionArea = function
 						rtfeldman$elm_css$Css$alignItems(rtfeldman$elm_css$Css$flexStart)
 					]))
 			]),
-		elm_community$maybe_extra$Maybe$Extra$values(
-			_List_fromArray(
-				[
-					elm$core$Maybe$Just(
-					author$project$StockMarket$Render$Projection$projectionInputForm(ctx)),
-					A2(
-					elm$core$Maybe$map,
-					author$project$StockMarket$Render$Projection$networthChart(ctx),
-					author$project$StockMarket$Render$Projection$buildProjection(projectionInput)),
-					A2(
-					elm$core$Maybe$map,
-					author$project$StockMarket$Render$Projection$relativeNetworthChart(ctx),
-					author$project$StockMarket$Render$Projection$buildProjection(projectionInput))
-				])));
+		_List_fromArray(
+			[
+				author$project$StockMarket$Render$Projection$projectionInputForm(ctx),
+				author$project$StockMarket$Render$Projection$chartDisplay(ctx)
+			]));
 };
 var elm$core$String$map = _String_map;
 var author$project$StockMarket$Render$Spreadsheet$sanitizeSectionName = elm$core$String$map(
@@ -14374,7 +14439,6 @@ var rtfeldman$elm_css$Css$prop4 = F5(
 					[argA.O, argB.O, argC.O, argD.O])));
 	});
 var rtfeldman$elm_css$Css$margin4 = rtfeldman$elm_css$Css$prop4('margin');
-var rtfeldman$elm_css$Css$padding = rtfeldman$elm_css$Css$prop1('padding');
 var rtfeldman$elm_css$Css$cssFunction = F2(
 	function (funcName, args) {
 		return funcName + ('(' + (A2(elm$core$String$join, ', ', args) + ')'));
@@ -14437,7 +14501,6 @@ var author$project$StockMarket$Render$Spreadsheet$gridCell = F5(
 var rtfeldman$elm_css$Css$borderWidth = rtfeldman$elm_css$Css$prop1('border-width');
 var rtfeldman$elm_css$Css$padding4 = rtfeldman$elm_css$Css$prop4('padding');
 var rtfeldman$elm_css$Css$small = {x: 0, O: 'small'};
-var rtfeldman$elm_css$Css$width = rtfeldman$elm_css$Css$prop1('width');
 var author$project$StockMarket$Render$Spreadsheet$instructions = function (_n0) {
 	return _List_fromArray(
 		[

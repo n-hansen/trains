@@ -5389,7 +5389,7 @@ var elm$parser$Parser$variable = function (i) {
 var author$project$StockMarket$Parser$nameParser = function () {
 	var forbiddenWords = elm$core$Set$fromList(
 		_List_fromArray(
-			['bank', 'treasury']));
+			['bank', 'treasury', 'market']));
 	var forbiddenChars = elm$core$Set$fromList(
 		_List_fromArray(
 			[' ', '\n', '\r', '\t', ',', '$', '¥', '€', '=', ':', ';', '(', ')', '[', ']', '{', '}', '*', '#']));
@@ -5943,10 +5943,6 @@ var author$project$StockMarket$Parser$companyParser = A2(
 									elm$parser$Parser$ignorer,
 									elm$parser$Parser$succeed(elm$core$Maybe$Nothing),
 									elm$parser$Parser$keyword('bank')),
-									A2(
-									elm$parser$Parser$ignorer,
-									elm$parser$Parser$succeed(elm$core$Maybe$Nothing),
-									elm$parser$Parser$keyword('treasury')),
 									A2(
 									elm$parser$Parser$ignorer,
 									elm$parser$Parser$succeed(elm$core$Maybe$Nothing),

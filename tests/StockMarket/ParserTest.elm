@@ -240,6 +240,43 @@ suite =
             --             ( Err ["Player alic is the share leader of the NYC but is not president."]
             --             )
             ]
+        -- TODO write market equality that handles alists better
+        -- , describe "serialization tests"
+        --     [ test "serialize test 1" <|
+        --         \_ ->
+        --           checkSerializeThenDeserialize
+        --           <| Market
+        --                 [P "alice", P "bob"]
+        --                 (Just <| P "bob")
+        --                 [C "NYC", C "GT"]
+        --                 ( Dict.fromList
+        --                       [ (P "bob", 12)
+        --                       , (P "alice", 11)
+        --                       ]
+        --                 )
+        --                 ( Dict.fromList
+        --                       [ ((P "alice", C "NYC"), 2)
+        --                       , ((P "bob", C "NYC"), 3)
+        --                       , ((P "alice", C "GT"), 4)
+        --                       ]
+        --                 )
+        --                 ( Dict.fromList
+        --                       [ (C "GT", P "alice")
+        --                       , (C "NYC", P "bob")
+        --                       ]
+        --                 )
+        --                 ( Dict.fromList
+        --                       [(C "NYC", 1)]
+        --                 )
+        --                 Dict.empty
+        --                 (linearShareValueTrack [0,10,20,30,40,50,60,70,80,90,100,112,124,137,150,165,180,195,212,230,250,270,295,320,345,375,405,440,475,510,500]
+        --                 |> insertCompanyShareValue (C "NYC") 100
+        --                 |> insertCompanyShareValue (C "GT") 200
+        --                 )
+        --                 400
+        --                 10
+        --                 11
+        --     ]
         ]
 
 
@@ -259,3 +296,11 @@ checkMaterialization lines expected =
         |> String.join "\n"
         |> parseAndMaterializeMarket
         |> Expect.equal expected
+
+
+checkSerializeThenDeserialize : Market -> Expectation
+checkSerializeThenDeserialize market =
+    market
+        |> serialize
+        |> parseAndMaterializeMarket
+        |> Expect.equal (Ok market)

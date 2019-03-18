@@ -1,4 +1,4 @@
-module StockMarket.Parser exposing (ParseState,ConfigStatement,blankState,parseAndMaterializeMarket,configurationParser)
+module StockMarket.Parser exposing (ParseState,ConfigStatement,blankState,parseAndMaterializeMarket,configurationParser,serialize)
 
 import AssocList as Dict
 import Char
@@ -10,7 +10,7 @@ import Parser exposing (Parser,(|=),(|.))
 import Result
 import Result.Extra as Result
 import Set
-import StockMarket exposing (Market, PlayerName(..), CompanyName(..), ShareValueTrack(..),linearShareValueTrack, insertCompanyShareValue)
+import StockMarket exposing (Market, PlayerName(..), CompanyName(..), ShareValueTrack(..), linearShareValueTrack, insertCompanyShareValue, companyShareValue)
 import Tuple
 import Util.Result as Result
 
@@ -256,7 +256,7 @@ maybeStar =
         ]
 
 
--- Parsing operations
+-- Parsing/unparsing operations
 
 
 parseAndMaterializeMarket : String -> Result (List String) Market
@@ -323,3 +323,58 @@ materializeMarket st =
             |> Result.andMapListErr bank
             |> Result.andMapListErr totalShares
             |> Result.andMapListErr certificateLimit
+
+
+serialize : Market -> String
+serialize ({playerOrder,activePlayer,companyOrder,playerCash,playerShares,presidents,bankShares,companyCash,bank,certificateLimit} as market) =
+    let
+        bankListing = "b:" ++ String.fromInt bank
+
+        certListing = "certs:" ++ String.fromInt certificateLimit
+
+        playerListings =
+            playerOrder
+                |> List.map
+                   (\(P pName as player) ->
+                        "p:"
+                            ++ pName
+                            ++ (if Just player == activePlayer then "* " else " ")
+                            ++ (Dict.get player playerCash
+                                    |> Maybe.withDefault 0
+                                    |> String.fromInt
+                               )
+                            ++ " "
+                            ++ (playerShares
+                                    |> Dict.toList
+                                    |> List.filter (\ ((p,_),s) -> p == player && s > 0)
+                                    |> List.map (\((_,C cName as c),s) ->
+                                                     if Dict.get c presidents == Just player
+                                                     then cName ++ "*=" ++ String.fromInt s
+                                                     else cName ++ "="  ++ String.fromInt s
+                                                )
+                                    |> String.join " "
+                               )
+                   )
+
+        companyListings =
+            companyOrder
+                |> List.map
+                   (\(C cName as company) ->
+                        "c:"
+                            ++ cName
+                            ++ " "
+                            ++ (companyShareValue market company
+                                    |> Maybe.withDefault 0
+                                    |> String.fromInt
+                               )
+                            ++ " bank="
+                            ++ (Dict.get company bankShares
+                                    |> Maybe.withDefault 0
+                                    |> String.fromInt
+                               )
+                   )
+    in
+        [bankListing, certListing]
+            ++ companyListings
+            ++ playerListings
+            |> String.join "\n"
